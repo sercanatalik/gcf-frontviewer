@@ -38,7 +38,7 @@ import { TradeItem } from "./trade-item"
 import { TradeDetailDialog } from "./trade-detail-dialog"
 import { formatCurrency } from "./utils"
 
-const ITEMS_PER_PAGE = 5
+const ITEMS_PER_PAGE = 10
 
 const DEFAULT_RELATIVE_DT = 30
 
