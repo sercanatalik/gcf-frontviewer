@@ -16,7 +16,18 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import type { RadialChartDef } from "./data"
-import type { RadialDataPoint } from "./use-radial-data"
+import type { GroupedDataPoint } from "./use-radial-data"
+
+const COLORS = [
+  "hsl(217, 91%, 60%)",
+  "hsl(142, 71%, 45%)",
+  "hsl(262, 83%, 58%)",
+  "hsl(30, 90%, 55%)",
+  "hsl(0, 84%, 60%)",
+  "hsl(45, 85%, 50%)",
+  "hsl(180, 60%, 45%)",
+  "hsl(330, 70%, 55%)",
+]
 
 function formatValue(value: number, formatter: string): string {
   if (formatter === "currency") {
@@ -32,27 +43,25 @@ function formatValue(value: number, formatter: string): string {
 
 interface RadialChartCardProps {
   chart: RadialChartDef
-  data?: RadialDataPoint
+  data?: GroupedDataPoint[]
   isLoading: boolean
 }
 
 export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps) {
-  const primary = data?.primary ?? 0
-  const secondary = data?.secondary ?? 0
-  const total = primary + secondary
+  const groups = data ?? []
+  const total = groups.reduce((sum, g) => sum + Math.abs(g.value), 0)
 
-  const chartData = [{ primary, secondary }]
+  // Build single data point with all groups as keys
+  const chartData = [
+    Object.fromEntries(groups.map((g) => [g.group, Math.abs(g.value)])),
+  ]
 
-  const chartConfig: ChartConfig = {
-    primary: {
-      label: chart.measures.primary.label,
-      color: chart.measures.primary.color,
-    },
-    secondary: {
-      label: chart.measures.secondary.label,
-      color: chart.measures.secondary.color,
-    },
-  }
+  const chartConfig: ChartConfig = Object.fromEntries(
+    groups.map((g, i) => [
+      g.group,
+      { label: g.group, color: COLORS[i % COLORS.length] },
+    ]),
+  )
 
   return (
     <Card className="flex flex-col">
@@ -106,33 +115,30 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
                   }}
                 />
               </PolarRadiusAxis>
-              <RadialBar
-                dataKey="primary"
-                stackId="a"
-                cornerRadius={5}
-                fill="var(--color-primary)"
-                className="stroke-transparent stroke-2"
-              />
-              <RadialBar
-                dataKey="secondary"
-                fill="var(--color-secondary)"
-                stackId="a"
-                cornerRadius={5}
-                className="stroke-transparent stroke-2"
-              />
+              {groups.map((g, i) => (
+                <RadialBar
+                  key={g.group}
+                  dataKey={g.group}
+                  stackId="a"
+                  cornerRadius={5}
+                  fill={COLORS[i % COLORS.length]}
+                  className="stroke-transparent stroke-2"
+                />
+              ))}
             </RadialBarChart>
           </ChartContainer>
         )}
       </CardContent>
-      <div className="flex justify-center gap-4 pb-4 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: chart.measures.primary.color }} />
-          {chart.measures.primary.label}
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full" style={{ backgroundColor: chart.measures.secondary.color }} />
-          {chart.measures.secondary.label}
-        </div>
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2 pb-4 text-xs text-muted-foreground">
+        {groups.map((g, i) => (
+          <div key={g.group} className="flex items-center gap-1.5">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: COLORS[i % COLORS.length] }}
+            />
+            {g.group}
+          </div>
+        ))}
       </div>
     </Card>
   )

@@ -13,7 +13,7 @@ export function RadialChartsGroup() {
         <RadialChartCard
           key={chart.key}
           chart={chart}
-          data={data?.[chart.key]}
+          data={data[chart.key]}
           isLoading={isLoading}
         />
       ))}
