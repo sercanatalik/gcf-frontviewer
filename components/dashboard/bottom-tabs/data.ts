@@ -28,4 +28,11 @@ export const tabs: TabDef[] = [
     groupLabel: "Client",
     limit: 10,
   },
+    {
+    key: "wwrByCountry",
+    label: "Wrong Way Risk by Country",
+    groupBy: "countryOfRisk",
+    groupLabel: "Country",
+    limit: 10,
+  },
 ]

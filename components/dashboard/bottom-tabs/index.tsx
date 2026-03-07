@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { LayoutGrid } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -28,13 +29,16 @@ export function BottomTabs() {
     <Card>
       <CardContent>
         <Tabs defaultValue={tabs[0]!.key}>
-          <TabsList variant="line">
-            {tabs.map((tab) => (
-              <TabsTrigger key={tab.key} value={tab.key}>
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="size-4 text-chart-3" />
+            <TabsList variant="line">
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.key} value={tab.key}>
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
           {tabs.map((tab) => (
             <TabsContent key={tab.key} value={tab.key} className="pt-4">
               <DataTable
