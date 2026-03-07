@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { RiskFilter } from "./filters/risk-filter"
 import {
   filterTypes,
@@ -8,8 +9,17 @@ import {
   operatorConfig,
   dateValues,
 } from "./filters/filter-config"
+import { filtersActions } from "@/lib/store/filters"
 
-export function FilterBar() {
+interface FilterBarProps {
+  tableName?: string
+}
+
+export function FilterBar({ tableName = "gcf_risk_mv" }: FilterBarProps) {
+  useEffect(() => {
+    filtersActions.setActiveTable(tableName)
+  }, [tableName])
+
   return (
     <RiskFilter
       filterTypes={filterTypes}

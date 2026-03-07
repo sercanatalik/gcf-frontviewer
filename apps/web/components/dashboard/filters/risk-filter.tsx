@@ -15,12 +15,14 @@ import { ListFilter, Trash2 } from "lucide-react"
 import { nanoid } from "nanoid"
 import * as React from "react"
 import { useStore } from "@tanstack/react-store"
+import { useQueries } from "@tanstack/react-query"
 import Filters, {
   AnimateChangeInHeight,
   type FilterOption,
   type FilterConfig,
 } from "./filter-controls"
 import { filtersStore, filtersActions } from "@/lib/store/filters"
+import { dateValues } from "./filter-config"
 
 interface RiskFilterProps {
   filterTypes?: Record<string, string>
@@ -30,58 +32,46 @@ interface RiskFilterProps {
   dateValues?: string[]
 }
 
-const dummyFilterOptions: Record<string, FilterOption[]> = {
-  desk: [
-    { name: "hmsSL1", icon: undefined },
-    { name: "hmsSL2", icon: undefined },
-    { name: "hmsSL3", icon: undefined },
-  ],
-  book_name: [
-    { name: "BOOK_A", icon: undefined },
-    { name: "BOOK_B", icon: undefined },
-    { name: "BOOK_C", icon: undefined },
-  ],
-  counterparty_name: [
-    { name: "Garda Capital Partners", icon: undefined },
-    { name: "Balyasny Asset Management", icon: undefined },
-    { name: "Schonfeld Strategic Advisors", icon: undefined },
-    { name: "Hsbc Holdings", icon: undefined },
-    { name: "Citadel Securities", icon: undefined },
-  ],
-  trade_type: [
-    { name: "TotalReturnSwap", icon: undefined },
-    { name: "Repo", icon: undefined },
-    { name: "SecLending", icon: undefined },
-  ],
-  asset_class: [
-    { name: "Equity", icon: undefined },
-    { name: "Fixed Income", icon: undefined },
-    { name: "Credit", icon: undefined },
-  ],
-  collateral_type: [
-    { name: "Cash", icon: undefined },
-    { name: "Government Bond", icon: undefined },
-    { name: "Corporate Bond", icon: undefined },
-  ],
-  rating: [
-    { name: "AAA", icon: undefined },
-    { name: "AA", icon: undefined },
-    { name: "A", icon: undefined },
-    { name: "BBB", icon: undefined },
-    { name: "BB", icon: undefined },
-  ],
-  book_region: [
-    { name: "EMEA", icon: undefined },
-    { name: "APAC", icon: undefined },
-    { name: "AMER", icon: undefined },
-  ],
-  trade_dt: [
-    { name: "Today", icon: undefined },
-    { name: "Yesterday", icon: undefined },
-    { name: "This Week", icon: undefined },
-    { name: "Last Week", icon: undefined },
-    { name: "This Month", icon: undefined },
-  ],
+async function fetchDistinctValues(table: string, column: string): Promise<string[]> {
+  const res = await fetch(`/api/tables/distinct?table=${table}&column=${column}`)
+  if (!res.ok) return []
+  return res.json()
+}
+
+function useFilterOptions(
+  filterTypes: Record<string, string>,
+  iconMapping: Record<string, React.ReactNode>,
+  operatorConfig: Record<string, any>,
+) {
+  const tableName = useStore(filtersStore, (s) => s.activeTable)
+
+  const entries = React.useMemo(() => Object.entries(filterTypes), [filterTypes])
+
+  const queries = useQueries({
+    queries: entries.map(([key, column]) => {
+      const isDate = operatorConfig[key]?.type === "date"
+      return {
+        queryKey: ["distinct", tableName, column] as const,
+        queryFn: () => fetchDistinctValues(tableName, column),
+        enabled: !!tableName && !isDate,
+        staleTime: 5 * 60 * 1000,
+      }
+    }),
+  })
+
+  return React.useMemo(() => {
+    const options: Record<string, FilterOption[]> = {}
+    entries.forEach(([key], i) => {
+      const isDate = operatorConfig[key]?.type === "date"
+      if (isDate) {
+        options[key] = dateValues.map((name) => ({ name, icon: iconMapping[key] }))
+      } else {
+        const values = queries[i]?.data ?? []
+        options[key] = values.map((name) => ({ name, icon: iconMapping[key] }))
+      }
+    })
+    return options
+  }, [entries, queries, iconMapping, operatorConfig])
 }
 
 export function RiskFilter({
@@ -98,17 +88,7 @@ export function RiskFilter({
   const filters = useStore(filtersStore, (state) => state.filters)
   const hasActiveFilters = filters.some((f) => f.value?.length > 0)
 
-  const filterOptions = React.useMemo(() => {
-    const options: Record<string, FilterOption[]> = {}
-    for (const key of Object.keys(filterTypes)) {
-      const baseOptions = dummyFilterOptions[key] || []
-      options[key] = baseOptions.map((opt) => ({
-        ...opt,
-        icon: iconMapping[opt.name] || iconMapping[key],
-      }))
-    }
-    return options
-  }, [filterTypes, iconMapping])
+  const filterOptions = useFilterOptions(filterTypes, iconMapping, operatorConfig)
 
   const filterConfig: FilterConfig = React.useMemo(
     () => ({
