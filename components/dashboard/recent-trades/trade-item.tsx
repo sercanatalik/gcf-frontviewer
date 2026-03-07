@@ -1,6 +1,5 @@
 "use client"
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import {
   Tooltip,
@@ -10,7 +9,7 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import type { Trade } from "./types"
-import { getInitials, formatCurrency, timeAgo, daysUntil, daysUntilRaw, formatSpread } from "./utils"
+import { formatCurrency, timeAgo, daysUntil, daysUntilRaw, formatSpread } from "./utils"
 
 interface TradeItemProps {
   trade: Trade

@@ -15,7 +15,7 @@ import { ListFilter, Trash2 } from "lucide-react"
 import { nanoid } from "nanoid"
 import * as React from "react"
 import { useStore } from "@tanstack/react-store"
-import { useQueries } from "@tanstack/react-query"
+import { useQuery, useQueries } from "@tanstack/react-query"
 import Filters, {
   AnimateChangeInHeight,
   type FilterOption,
@@ -71,6 +71,40 @@ function useFilterOptions(
   }, [entries, queries, iconMapping, operatorConfig])
 }
 
+const ASOF_FILTER_ID = "__asofDate__"
+
+function useDefaultAsofDate(tableName: string) {
+  const { data: latestDate } = useQuery({
+    queryKey: ["latest-asofDate", tableName],
+    queryFn: async () => {
+      const res = await fetch(`/api/tables/distinct?table=${tableName}&column=asofDate`)
+      if (!res.ok) return null
+      const values: string[] = await res.json()
+      return values.length > 0 ? values[values.length - 1]! : null
+    },
+    enabled: !!tableName,
+  })
+
+  const seeded = React.useRef(false)
+
+  React.useEffect(() => {
+    if (!latestDate || seeded.current) return
+    const existing = filtersStore.state.filters.find((f) => f.id === ASOF_FILTER_ID)
+    if (!existing) {
+      filtersActions.addFilter({
+        id: ASOF_FILTER_ID,
+        type: "asofDate",
+        operator: "is",
+        value: [latestDate],
+        field: "asofDate",
+      })
+    }
+    seeded.current = true
+  }, [latestDate])
+
+  return latestDate
+}
+
 export function RiskFilter({
   filterTypes = {},
   filterOperators = {},
@@ -82,8 +116,11 @@ export function RiskFilter({
   const [commandInput, setCommandInput] = React.useState("")
   const commandInputRef = React.useRef<HTMLInputElement | null>(null)
 
+  const tableName = useStore(filtersStore, (s) => s.activeTable)
+  const latestDate = useDefaultAsofDate(tableName)
+
   const filters = useStore(filtersStore, (state) => state.filters)
-  const hasActiveFilters = filters.some((f) => f.value?.length > 0)
+  const hasActiveFilters = filters.some((f) => f.value?.length > 0 && f.id !== ASOF_FILTER_ID)
 
   const filterOptions = useFilterOptions(filterTypes, iconMapping, operatorConfig)
 
@@ -140,7 +177,11 @@ export function RiskFilter({
           variant="outline"
           size="sm"
           className="h-6 border-none text-xs text-muted-foreground transition hover:bg-transparent hover:text-red-500"
-          onClick={() => filtersActions.clearFilters()}
+          onClick={() => {
+            const asofFilter = filters.find((f) => f.id === ASOF_FILTER_ID)
+            filtersActions.clearFilters()
+            if (asofFilter) filtersActions.addFilter(asofFilter)
+          }}
         >
           <Trash2 className="mr-0 size-3" />
           Reset

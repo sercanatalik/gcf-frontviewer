@@ -21,12 +21,18 @@ import { Skeleton } from "@/components/ui/skeleton"
 import {
   ArrowDownRight,
   ArrowUpRight,
+  Banknote,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
+  Globe,
   TrendingUp,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { useStore } from "@tanstack/react-store"
 import { cn } from "@/lib/utils"
+import { filtersStore } from "@/lib/store/filters"
+import { serializeFilters } from "@/lib/filters/serialize"
 import type { Trade } from "./types"
 import { TradeItem } from "./trade-item"
 import { TradeDetailDialog } from "./trade-detail-dialog"
@@ -34,8 +40,15 @@ import { formatCurrency } from "./utils"
 
 const ITEMS_PER_PAGE = 8
 
-async function fetchTrades(sort: "recent" | "maturity"): Promise<Trade[]> {
-  const res = await fetch(`/api/tables/recent-trades?limit=50&sort=${sort}`)
+const DEFAULT_RELATIVE_DT = 365
+
+async function fetchTrades(sort: "recent" | "maturity", filtersParam: string, relativeDt = DEFAULT_RELATIVE_DT): Promise<Trade[]> {
+  const url = new URL("/api/tables/recent-trades", window.location.origin)
+  url.searchParams.set("limit", "50")
+  url.searchParams.set("sort", sort)
+  url.searchParams.set("relativeDt", String(relativeDt))
+  if (filtersParam) url.searchParams.set("filters", filtersParam)
+  const res = await fetch(url)
   if (!res.ok) throw new Error("Failed to fetch trades")
   return res.json()
 }
@@ -46,11 +59,16 @@ interface Stats {
   desks: number
   regions: number
   totalFunding: number
+  totalCollateral: number
   totalExposure: number
   avgMargin: number
+  avgHaircut: number
   payCount: number
   recCount: number
   productBreakdown: { name: string; count: number }[]
+  deskBreakdown: { name: string; count: number }[]
+  regionBreakdown: { name: string; count: number }[]
+  topCounterparties: { name: string; amount: number }[]
 }
 
 function getStats(trades: Trade[]): Stats {
@@ -58,24 +76,50 @@ function getStats(trades: Trade[]): Stats {
   const desks = new Set(trades.map((t) => t.hmsDesk)).size
   const regions = new Set(trades.map((t) => t.region)).size
   const totalFunding = trades.reduce((s, t) => s + (t.fundingAmount || 0), 0)
+  const totalCollateral = trades.reduce((s, t) => s + (t.collateralAmount || 0), 0)
   const totalExposure = trades.reduce((s, t) => s + (t.financingExposure || 0), 0)
   const margins = trades.filter((t) => t.fundingMargin != null)
   const avgMargin = margins.length > 0
     ? margins.reduce((s, t) => s + t.fundingMargin, 0) / margins.length
     : 0
+  const haircuts = trades.filter((t) => t.haircut != null && t.haircut > 0)
+  const avgHaircut = haircuts.length > 0
+    ? haircuts.reduce((s, t) => s + t.haircut, 0) / haircuts.length
+    : 0
   const payCount = trades.filter((t) => t.side === "PAY").length
   const recCount = trades.filter((t) => t.side === "RECEIVE" || t.side === "REC").length
 
-  const productMap = new Map<string, number>()
-  for (const t of trades) {
-    if (t.productType) productMap.set(t.productType, (productMap.get(t.productType) || 0) + 1)
+  const breakdownOf = (key: keyof Trade, limit: number) => {
+    const map = new Map<string, number>()
+    for (const t of trades) {
+      const v = t[key] as string
+      if (v) map.set(v, (map.get(v) || 0) + 1)
+    }
+    return [...map.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit)
   }
-  const productBreakdown = [...productMap.entries()]
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 4)
 
-  return { total: trades.length, counterparties, desks, regions, totalFunding, totalExposure, avgMargin, payCount, recCount, productBreakdown }
+  const productBreakdown = breakdownOf("productType", 5)
+  const deskBreakdown = breakdownOf("hmsDesk", 4)
+  const regionBreakdown = breakdownOf("region", 4)
+
+  // Top counterparties by absolute funding
+  const cpMap = new Map<string, number>()
+  for (const t of trades) {
+    if (t.counterParty) cpMap.set(t.counterParty, (cpMap.get(t.counterParty) || 0) + Math.abs(t.fundingAmount || 0))
+  }
+  const topCounterparties = [...cpMap.entries()]
+    .map(([name, amount]) => ({ name, amount }))
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 3)
+
+  return {
+    total: trades.length, counterparties, desks, regions,
+    totalFunding, totalCollateral, totalExposure, avgMargin, avgHaircut,
+    payCount, recCount, productBreakdown, deskBreakdown, regionBreakdown, topCounterparties,
+  }
 }
 
 export function RecentTrades() {
@@ -84,14 +128,17 @@ export function RecentTrades() {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
+  const filters = useStore(filtersStore, (s) => s.filters)
+  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
+
   const { data: recentTrades = [], isLoading: recentLoading } = useQuery({
-    queryKey: ["recent-trades", "recent"],
-    queryFn: () => fetchTrades("recent"),
+    queryKey: ["recent-trades", "recent", filtersParam],
+    queryFn: () => fetchTrades("recent", filtersParam),
   })
 
   const { data: maturingTrades = [], isLoading: maturingLoading } = useQuery({
-    queryKey: ["recent-trades", "maturity"],
-    queryFn: () => fetchTrades("maturity"),
+    queryKey: ["recent-trades", "maturity", filtersParam],
+    queryFn: () => fetchTrades("maturity", filtersParam),
   })
 
   const trades = activeTab === "recent" ? recentTrades : maturingTrades
@@ -112,7 +159,7 @@ export function RecentTrades() {
 
   return (
     <>
-      <Card className="w-full min-w-[360px] lg:w-[520px]">
+      <Card className="flex w-full min-w-[360px] flex-col lg:w-[520px]">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base">
@@ -124,21 +171,26 @@ export function RecentTrades() {
           </div>
         </CardHeader>
 
-        {/* Summary strip */}
+        {/* KPI grid */}
         <div className="px-6 pb-3">
           {isLoading ? (
-            <div className="flex gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-12 flex-1 rounded-md" />
+            <div className="grid grid-cols-3 gap-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-[52px] rounded-md" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <MiniStat
                 label="Net Funding"
                 value={formatCurrency(stats.totalFunding)}
                 icon={stats.totalFunding >= 0 ? ArrowUpRight : ArrowDownRight}
                 color={stats.totalFunding >= 0 ? "text-foreground" : "text-muted-foreground"}
+              />
+              <MiniStat
+                label="Collateral"
+                value={formatCurrency(stats.totalCollateral)}
+                icon={Banknote}
               />
               <MiniStat
                 label="Exposure"
@@ -150,6 +202,10 @@ export function RecentTrades() {
                 value={`${stats.avgMargin.toFixed(2)}bp`}
               />
               <MiniStat
+                label="Avg Haircut"
+                value={`${stats.avgHaircut.toFixed(1)}%`}
+              />
+              <MiniStat
                 label="PAY / REC"
                 value={`${stats.payCount} / ${stats.recCount}`}
               />
@@ -157,30 +213,37 @@ export function RecentTrades() {
           )}
         </div>
 
-        {/* Product breakdown pills */}
-        {!isLoading && stats.productBreakdown.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-6 pb-3">
-            {stats.productBreakdown.map((p) => (
-              <span
-                key={p.name}
-                className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
-              >
-                {p.name}
-                <span className="font-semibold tabular-nums text-foreground">{p.count}</span>
-              </span>
-            ))}
-            {stats.counterparties > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-                Counterparties
-                <span className="font-semibold tabular-nums text-foreground">{stats.counterparties}</span>
-              </span>
+        {/* Breakdowns */}
+        {!isLoading && (
+          <div className="flex flex-col gap-2 px-6 pb-3">
+            {/* Desks */}
+            {stats.deskBreakdown.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <BookOpen className="size-3 shrink-0 text-muted-foreground/50" />
+                <div className="flex flex-wrap gap-1">
+                  {stats.deskBreakdown.map((d) => (
+                    <Pill key={d.name} label={d.name} value={d.count} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Regions */}
+            {stats.regionBreakdown.length > 0 && (
+              <div className="flex items-center gap-1.5">
+                <Globe className="size-3 shrink-0 text-muted-foreground/50" />
+                <div className="flex flex-wrap gap-1">
+                  {stats.regionBreakdown.map((r) => (
+                    <Pill key={r.name} label={r.name} value={r.count} />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}
 
         <Separator />
 
-        <CardContent className="pt-3">
+        <CardContent className="flex-1 pt-3">
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="w-full">
               <TabsTrigger value="recent" className="flex-1">Recent</TabsTrigger>
@@ -220,6 +283,15 @@ export function RecentTrades() {
         onOpenChange={setDialogOpen}
       />
     </>
+  )
+}
+
+function Pill({ label, value }: { label: string; value: string | number }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+      {label}
+      <span className="font-semibold tabular-nums text-foreground">{value}</span>
+    </span>
   )
 }
 
@@ -284,7 +356,7 @@ function TradeList({
 
   if (trades.length === 0) {
     return (
-      <div className="flex h-[420px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-[380px] items-center justify-center text-sm text-muted-foreground">
         No trades available
       </div>
     )
@@ -292,7 +364,7 @@ function TradeList({
 
   return (
     <>
-      <ScrollArea className="h-[420px]">
+      <ScrollArea className="h-[380px]">
         {trades.map((trade) => (
           <TradeItem key={trade.tradeId} trade={trade} variant={variant} onClick={onClick} />
         ))}
