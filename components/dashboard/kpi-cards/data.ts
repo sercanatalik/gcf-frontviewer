@@ -30,9 +30,12 @@ export const kpiMeasures: KpiMeasure[] = [
     weightField: "fundingAmount",
     formatter: "bps",
   },
+]
+
+export const secondaryKpiMeasures: KpiMeasure[] = [
   {
     key: "avgMaturity",
-    label: "Average Maturity",
+    label: "Avg Maturity",
     field: "dtm",
     aggregation: "avgBy",
     weightField: "fundingAmount",

@@ -133,7 +133,7 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
         {groups.map((g, i) => (
           <div key={g.group} className="flex items-center gap-1.5">
             <span
-              className="size-2.5 rounded-full"
+              className="size-2 rounded-full"
               style={{ backgroundColor: COLORS[i % COLORS.length] }}
             />
             {g.group}

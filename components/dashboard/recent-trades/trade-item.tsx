@@ -18,9 +18,9 @@ interface TradeItemProps {
 }
 
 const sideColor: Record<string, string> = {
-  PAY: "bg-foreground",
-  RECEIVE: "bg-muted-foreground",
-  REC: "bg-muted-foreground",
+  PAY: "bg-chart-3",
+  RECEIVE: "bg-chart-1",
+  REC: "bg-chart-1",
 }
 
 export function TradeItem({ trade, variant, onClick }: TradeItemProps) {
@@ -129,7 +129,7 @@ export function TradeItem({ trade, variant, onClick }: TradeItemProps) {
       <div className="flex shrink-0 flex-col items-end gap-0.5">
         <span className={cn(
           "text-xs font-semibold tabular-nums",
-          trade.fundingAmount >= 0 ? "text-foreground" : "text-muted-foreground",
+          trade.fundingAmount >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
         )}>
           {formatCurrency(trade.fundingAmount)}
         </span>

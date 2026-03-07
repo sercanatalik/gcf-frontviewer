@@ -8,7 +8,7 @@ export function StatsRow() {
   const { data, isLoading } = useStatsData(statMeasures, DEFAULT_RELATIVE_DAYS)
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
       {statMeasures.map((measure) => (
         <StatItem
           key={measure.key}

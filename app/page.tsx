@@ -9,7 +9,7 @@ import { BottomTabs } from "@/components/dashboard/bottom-tabs"
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh flex-col gap-6 p-6">
+    <div className="flex min-h-svh flex-col gap-5 p-5 lg:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <DashboardHeader />
         <FilterBar />
@@ -17,7 +17,7 @@ export default function Page() {
 
       <KpiCards />
 
-      <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex flex-col gap-5 lg:flex-row">
         <div className="flex flex-1 flex-col gap-4">
           <CashOutChart />
           <StatsRow />

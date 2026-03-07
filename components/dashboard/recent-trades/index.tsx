@@ -296,8 +296,8 @@ function MiniStat({
   color?: string
 }) {
   return (
-    <div className="rounded-md border bg-muted/30 px-2.5 py-2">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+    <div className="rounded-md border bg-muted/20 px-2.5 py-2 transition-colors hover:bg-muted/40">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70">{label}</p>
       <div className="mt-0.5 flex items-center gap-1">
         {Icon && <Icon className={cn("size-3", color || "text-muted-foreground")} />}
         <span className={cn("text-xs font-semibold tabular-nums", color)}>{value}</span>

@@ -46,7 +46,7 @@ function DataTable({
       <thead>
         <tr className="border-b text-xs text-muted-foreground">
           {headers.map((h) => (
-            <th key={h} className="pb-2 text-left font-medium">
+            <th key={h} className="pb-2.5 text-left font-medium">
               {h}
             </th>
           ))}
@@ -54,9 +54,9 @@ function DataTable({
       </thead>
       <tbody>
         {rows.map((row, i) => (
-          <tr key={i} className="border-b last:border-b-0">
+          <tr key={i} className="border-b transition-colors last:border-b-0 hover:bg-muted/30">
             {row.map((cell, j) => (
-              <td key={j} className="py-2">
+              <td key={j} className="py-2.5 tabular-nums">
                 {cell}
               </td>
             ))}
