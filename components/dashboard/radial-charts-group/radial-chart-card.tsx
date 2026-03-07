@@ -65,25 +65,25 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
 
   return (
     <Card className="flex flex-col">
-      <CardHeader className="items-center pb-0">
+      <CardHeader className="items-center px-4 pt-4 pb-0">
         <CardTitle className="text-sm">{chart.title}</CardTitle>
         <CardDescription className="text-xs">{chart.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-1 items-center pb-0">
+      <CardContent className="flex flex-1 items-center px-4 pb-0">
         {isLoading ? (
-          <div className="mx-auto flex aspect-square w-full max-w-[250px] items-center justify-center">
+          <div className="mx-auto flex aspect-square w-full max-w-[150px] items-center justify-center">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square w-full max-w-[250px]"
+            className="mx-auto aspect-square w-full max-w-[150px]"
           >
             <RadialBarChart
               data={chartData}
-              endAngle={180}
+              endAngle={360}
               innerRadius={80}
-              outerRadius={130}
+              outerRadius={140}
             >
               <ChartTooltip
                 cursor={false}
@@ -129,7 +129,7 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
           </ChartContainer>
         )}
       </CardContent>
-      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2 pb-4 text-xs text-muted-foreground">
+      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2 pb-3 text-xs text-muted-foreground">
         {groups.map((g, i) => (
           <div key={g.group} className="flex items-center gap-1.5">
             <span
