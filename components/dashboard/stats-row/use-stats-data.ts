@@ -1,0 +1,40 @@
+import { useQuery } from "@tanstack/react-query"
+import { useStore } from "@tanstack/react-store"
+import { useMemo } from "react"
+import { filtersStore } from "@/lib/store/filters"
+import { serializeFilters } from "@/lib/filters/serialize"
+import type { StatMeasure, StatData } from "./types"
+
+async function fetchStatsSummary(
+  measures: StatMeasure[],
+  relativeDays: number,
+  filtersParam: string,
+): Promise<Record<string, StatData>> {
+  const params = new URLSearchParams({
+    measures: JSON.stringify(
+      measures.map((m) => ({
+        key: m.key,
+        field: m.field,
+        aggregation: m.aggregation,
+      })),
+    ),
+    relativeDays: String(relativeDays),
+  })
+  if (filtersParam) params.set("filters", filtersParam)
+
+  const res = await fetch(`/api/tables/stats-summary?${params}`)
+  if (!res.ok) throw new Error("Failed to fetch stats data")
+  return res.json()
+}
+
+export function useStatsData(measures: StatMeasure[], relativeDays: number) {
+  const filters = useStore(filtersStore, (s) => s.filters)
+  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
+
+  return useQuery({
+    queryKey: ["stats-summary", measures.map((m) => m.key), relativeDays, filtersParam],
+    queryFn: () => fetchStatsSummary(measures, relativeDays, filtersParam),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
