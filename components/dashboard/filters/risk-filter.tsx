@@ -182,7 +182,7 @@ export function RiskFilter({
                 onInputCapture={(e) => setCommandInput(e.currentTarget.value)}
                 ref={commandInputRef}
               />
-              <CommandList>
+              <CommandList className="max-h-[500px]">
                 <CommandEmpty>No results found.</CommandEmpty>
                 {selectedView ? (
                   <CommandGroup key={selectedView}>

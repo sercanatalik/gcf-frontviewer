@@ -52,7 +52,7 @@ const filterFields: Record<string, FilterFieldDef> = {
   issuerName:            { column: "issuerName",            icon: <Building className="size-3.5 text-blue-500" />,          type: "text",   operators: textOperators },
   counterpartyParentName:{ column: "counterpartyParentName",icon: <Users className="size-3.5 text-amber-500" />,            type: "text",   operators: textOperators },
   cpType:                { column: "cpType",                icon: <Network className="size-3.5 text-rose-500" />,           type: "select", operators: selectOperators },
-  asofDate:              { column: "asofDate",              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "date",   operators: selectOperators },
+  asofDate:              { column: "asofDate",              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "select",   operators: textOperators },
 }
 
 // Derived maps consumed by RiskFilter
