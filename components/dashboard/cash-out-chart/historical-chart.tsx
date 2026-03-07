@@ -1,22 +1,23 @@
 "use client"
 
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from "recharts"
 import { useHistoricalData } from "./use-cashout-data"
 import {
   formatCurrency,
   processHistoricalData,
   getChartGroups,
-  getBarColor,
+  getGroupColor,
 } from "./utils"
+import { ChartTooltip } from "./chart-tooltip"
+import { ChartSkeleton } from "./chart-skeleton"
 
 interface HistoricalChartProps {
   fieldName: string
@@ -26,18 +27,12 @@ interface HistoricalChartProps {
 export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
   const { data, isLoading, error } = useHistoricalData(fieldName, groupBy)
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[350px] text-muted-foreground text-sm">
-        Loading...
-      </div>
-    )
-  }
+  if (isLoading) return <ChartSkeleton />
 
   if (error || !data?.data?.length) {
     return (
       <div className="flex items-center justify-center h-[350px] text-muted-foreground text-sm">
-        {error ? "Error loading data" : "No data available"}
+        {error ? "Failed to load data" : "No data available"}
       </div>
     )
   }
@@ -56,14 +51,29 @@ export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={350}>
-      <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
+      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+        <defs>
+          {groups.map((group, i) => {
+            const color = getGroupColor(i)
+            return (
+              <linearGradient key={group} id={`grad-${i}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={isStacked ? 0.8 : 0.4} />
+                <stop offset="100%" stopColor={color} stopOpacity={0.05} />
+              </linearGradient>
+            )
+          })}
+        </defs>
+        <CartesianGrid
+          strokeDasharray="3 3"
+          vertical={false}
+          className="stroke-border/50"
+        />
         <XAxis
           dataKey="date"
           tick={{ fontSize: 11 }}
           tickLine={false}
           axisLine={false}
-          minTickGap={32}
+          minTickGap={40}
           className="fill-muted-foreground"
         />
         <YAxis
@@ -71,29 +81,29 @@ export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
           tick={{ fontSize: 11 }}
           tickLine={false}
           axisLine={false}
+          width={60}
           className="fill-muted-foreground"
         />
-        <Tooltip
-          contentStyle={{
-            borderRadius: "8px",
-            border: "1px solid var(--border)",
-            backgroundColor: "var(--card)",
-            color: "var(--card-foreground)",
-          }}
-          formatter={(value) => formatCurrency(Number(value))}
-        />
-        <Legend />
+        <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--border)", strokeDasharray: "4 4" }} />
         {groups.map((group, i) => (
-          <Bar
+          <Area
             key={group}
+            type="monotone"
             dataKey={group}
             stackId={isStacked ? "stack" : undefined}
-            fill={getBarColor(group, i, isStacked)}
-            radius={isStacked ? undefined : [2, 2, 0, 0]}
-            maxBarSize={40}
+            stroke={getGroupColor(i)}
+            strokeWidth={2}
+            fill={`url(#grad-${i})`}
+            dot={false}
+            activeDot={{
+              r: 4,
+              strokeWidth: 2,
+              stroke: "var(--card)",
+              fill: getGroupColor(i),
+            }}
           />
         ))}
-      </BarChart>
+      </AreaChart>
     </ResponsiveContainer>
   )
 }

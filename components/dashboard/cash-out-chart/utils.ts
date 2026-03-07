@@ -4,12 +4,12 @@ export const FIELD_OPTIONS = [
   { value: "collateralAmount", label: "Collateral Amount" },
 ]
 
-export const MONOCHROME_COLORS = [
-  "#0a0e15",
-  "#2a3441",
-  "#525c6a",
-  "#7f8b9b",
-  "#b8c1ce",
+export const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
 ]
 
 export function sanitizeKey(key: string): string {
@@ -35,7 +35,6 @@ export function processHistoricalData(
   )
 
   if (!groupByField) {
-    // Aggregate daily data into monthly buckets
     const byMonth: Record<string, number> = {}
     for (const item of data) {
       const m = toMonth(String(item.asofDate))
@@ -46,7 +45,6 @@ export function processHistoricalData(
       .sort(byDate)
   }
 
-  // Grouped: aggregate by month + group
   const byMonthMap: Record<string, Record<string, number>> = {}
   const totals: Record<string, number> = {}
 
@@ -81,78 +79,53 @@ export function processHistoricalData(
 
 export function processFutureData(
   data: Record<string, unknown>[],
+  fieldName: string,
 ): { date: string; fullDate: string; [k: string]: unknown }[] {
   if (!data || data.length === 0) return []
 
   const first = data[0]!
-  const cumulativeField = Object.keys(first).find((k) =>
-    k.startsWith("cumulative_"),
-  )
-  if (!cumulativeField) return []
-  const fieldName = cumulativeField.replace("cumulative_", "")
   const groupByField = Object.keys(first).find(
-    (k) => k !== "maturityDt" && k !== fieldName && k !== cumulativeField,
+    (k) => k !== "maturityDt" && k !== fieldName,
   )
 
   if (!groupByField) {
     const byMonth: Record<string, number> = {}
     for (const item of data) {
-      const d = toMonth(String(item.maturityDt))
-      byMonth[d] = Number(item[cumulativeField] || 0)
+      const m = toMonth(String(item.maturityDt))
+      byMonth[m] = (byMonth[m] || 0) + Number(item[fieldName] || 0)
     }
     return Object.entries(byMonth)
-      .map(([d, v]) => ({ date: fmtDate(d + "-01"), fullDate: d + "-01", Total: v }))
+      .map(([m, v]) => ({ date: fmtDate(m + "-01"), fullDate: m + "-01", Total: v }))
       .sort(byDate)
   }
 
+  const byMonthMap: Record<string, Record<string, number>> = {}
   const totals: Record<string, number> = {}
-  const latestByGroupMonth: Record<string, Record<string, number>> = {}
 
   for (const item of data) {
+    const m = toMonth(String(item.maturityDt))
     const g = sanitizeKey(String(item[groupByField] || "Unknown"))
-    const cv = Number(item[cumulativeField] || 0)
-    if (!totals[g] || cv > totals[g]) totals[g] = cv
-    const d = toMonth(String(item.maturityDt))
-    latestByGroupMonth[g] ??= {}
-    latestByGroupMonth[g][d] = cv
-  }
-
-  const allMonths = new Set<string>()
-  for (const m of Object.values(latestByGroupMonth)) {
-    for (const month of Object.keys(m)) allMonths.add(month)
+    const v = Number(item[fieldName] || 0)
+    if (isNaN(v)) continue
+    const bucket = (byMonthMap[m] ??= {})
+    bucket[g] = (bucket[g] || 0) + v
+    totals[g] = (totals[g] || 0) + v
   }
 
   const top4 = Object.entries(totals)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
     .slice(0, 4)
     .map(([k]) => k)
 
-  const grouped: Record<string, Record<string, number>> = {}
-  for (const d of allMonths) {
-    grouped[d] = {}
-    for (const [g, months] of Object.entries(latestByGroupMonth)) {
-      let v = months[d]
-      if (v === undefined) {
-        const sorted = Object.keys(months).sort()
-        const prev = sorted.filter((m) => m <= d)
-        v = prev.length > 0 ? months[prev[prev.length - 1]!] : totals[g] || 0
-      }
-      grouped[d][g] = v || 0
-    }
-  }
-
-  return Object.entries(grouped)
-    .map(([d, groups]) => {
-      const point: Record<string, unknown> = {
-        date: fmtDate(d + "-01"),
-        fullDate: d + "-01",
-      }
+  return Object.entries(byMonthMap)
+    .map(([m, groups]) => {
+      const point: Record<string, unknown> = { date: fmtDate(m + "-01"), fullDate: m + "-01" }
       let others = 0
       for (const [k, v] of Object.entries(groups)) {
         if (top4.includes(k)) point[k] = v
         else others += v
       }
-      if (others > 0) point["Others"] = others
+      if (others !== 0) point["Others"] = others
       return point as { date: string; fullDate: string }
     })
     .sort(byDate)
@@ -162,13 +135,17 @@ export function getChartGroups(
   chartData: { date: string; fullDate: string; [k: string]: unknown }[],
 ): string[] {
   if (chartData.length === 0) return []
-  return Object.keys(chartData[0]!).filter((k) => k !== "date" && k !== "fullDate")
+  const keys = new Set<string>()
+  for (const point of chartData) {
+    for (const k of Object.keys(point)) {
+      if (k !== "date" && k !== "fullDate") keys.add(k)
+    }
+  }
+  return Array.from(keys)
 }
 
-export function getBarColor(group: string, index: number, isStacked: boolean): string {
-  if (!isStacked) return "var(--foreground)"
-  if (group === "Others") return MONOCHROME_COLORS[MONOCHROME_COLORS.length - 1]!
-  return MONOCHROME_COLORS[Math.min(index, MONOCHROME_COLORS.length - 2)]!
+export function getGroupColor(index: number): string {
+  return CHART_COLORS[index % CHART_COLORS.length]!
 }
 
 function fmtDate(d: string): string {
