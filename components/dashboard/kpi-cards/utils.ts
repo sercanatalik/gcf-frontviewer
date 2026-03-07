@@ -1,21 +1,39 @@
-export function formatValue(
-  value: number,
-  type: "currency" | "count" | "percentage" = "count",
-) {
-  const absValue = Math.abs(value)
+import type { KpiMeasure, KpiStatData } from "./types"
+
+export function formatKpiValue(value: number, formatter: KpiMeasure["formatter"]): string {
+  const abs = Math.abs(value)
   const sign = value < 0 ? "-" : ""
 
-  if (type === "percentage") return `(${value.toFixed(1)}%)`
+  switch (formatter) {
+    case "currency": {
+      if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(2)}B`
+      if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+      if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
+      return `${sign}$${Math.round(abs)}`
+    }
+    case "bps":
+      return `${(value * 100).toFixed(2)}bps`
+    case "days":
+      return `${Math.round(value)} days`
+    case "count":
+      return Math.round(value).toLocaleString("en-US")
+  }
+}
 
-  const format = (num: number, suffix: string) =>
-    type === "currency"
-      ? `${sign}$${num.toFixed(1)}${suffix}`
-      : `${sign}${num.toFixed(1)}${suffix}`
+export function formatDelta(changePercent: number): string {
+  const sign = changePercent >= 0 ? "+" : ""
+  return `${sign}${changePercent.toFixed(1)}%`
+}
 
-  if (absValue >= 1_000_000) return format(absValue / 1_000_000, "M")
-  if (absValue >= 1_000) return format(absValue / 1_000, "K")
-
-  return type === "currency"
-    ? `${sign}$${Math.round(absValue)}`
-    : Math.round(value).toString()
+export function formatFooter(
+  data: KpiStatData,
+  formatter: KpiMeasure["formatter"],
+  relativeDays: number,
+): { label: string; description: string } {
+  const direction = data.change >= 0 ? "Up" : "Down"
+  const changeStr = formatKpiValue(Math.abs(data.change), formatter)
+  return {
+    label: `${direction} ${changeStr} this period`,
+    description: `Compared to ${relativeDays} days ago`,
+  }
 }

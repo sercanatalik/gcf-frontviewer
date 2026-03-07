@@ -1,7 +1,14 @@
 "use client"
 
 import { useRef } from "react"
-import { TrendingUpIcon, TrendingDownIcon, Expand, Download } from "lucide-react"
+import {
+  TrendingUpIcon,
+  TrendingDownIcon,
+  Expand,
+  Download,
+  Loader2,
+  AlertCircle,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -20,17 +27,18 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import html2canvas from "html2canvas-pro"
-import type { KpiCardProps } from "./types"
+import type { KpiMeasure, KpiStatData } from "./types"
+import { formatKpiValue, formatDelta, formatFooter } from "./utils"
 
-export function KpiCard({
-  title,
-  value,
-  delta,
-  trend,
-  footerLabel,
-  footerDescription,
-}: KpiCardProps) {
-  const TrendIcon = trend === "up" ? TrendingUpIcon : TrendingDownIcon
+interface KpiCardProps {
+  measure: KpiMeasure
+  data?: KpiStatData
+  relativeDays: number
+  isLoading: boolean
+  error?: Error | null
+}
+
+export function KpiCard({ measure, data, relativeDays, isLoading, error }: KpiCardProps) {
   const modalContentRef = useRef<HTMLDivElement>(null)
 
   const downloadAsPNG = async () => {
@@ -43,19 +51,59 @@ export function KpiCard({
         allowTaint: true,
       })
       const link = document.createElement("a")
-      link.download = `${title.toLowerCase().replace(/\s+/g, "-")}-${new Date().toISOString().split("T")[0]}.png`
+      link.download = `${measure.key}-${new Date().toISOString().split("T")[0]}.png`
       link.href = canvas.toDataURL("image/png")
       link.click()
-    } catch (error) {
-      console.error("Error downloading chart:", error)
+    } catch (err) {
+      console.error("Error downloading chart:", err)
     }
   }
+
+  const trend = data ? (data.change >= 0 ? "up" : "down") : "up"
+  const TrendIcon = trend === "up" ? TrendingUpIcon : TrendingDownIcon
+
+  if (isLoading) {
+    return (
+      <Card className="@container/card">
+        <CardHeader>
+          <CardDescription>{measure.label}</CardDescription>
+          <div className="flex h-10 items-center">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          </div>
+        </CardHeader>
+        <CardFooter className="flex-col items-start gap-1.5 text-sm">
+          <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-3 w-40 animate-pulse rounded bg-muted" />
+        </CardFooter>
+      </Card>
+    )
+  }
+
+  if (error) {
+    return (
+      <Card className="@container/card">
+        <CardHeader>
+          <CardDescription>{measure.label}</CardDescription>
+          <div className="flex items-center gap-2">
+            <AlertCircle className="size-4 text-destructive" />
+            <span className="text-sm text-destructive">Error</span>
+          </div>
+        </CardHeader>
+      </Card>
+    )
+  }
+
+  if (!data) return null
+
+  const value = formatKpiValue(data.current, measure.formatter)
+  const delta = formatDelta(data.changePercent)
+  const footer = formatFooter(data, measure.formatter, relativeDays)
 
   return (
     <Dialog>
       <Card className="@container/card">
         <CardHeader>
-          <CardDescription>{title}</CardDescription>
+          <CardDescription>{measure.label}</CardDescription>
           <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
             {value}
           </CardTitle>
@@ -73,17 +121,19 @@ export function KpiCard({
         </CardHeader>
         <CardFooter className="flex-col items-start gap-1.5 text-sm">
           <div className="line-clamp-1 flex gap-2 font-medium">
-            {footerLabel}
+            {footer.label}
             <TrendIcon className="size-4" />
           </div>
-          <div className="text-muted-foreground">{footerDescription}</div>
+          <div className="text-muted-foreground">{footer.description}</div>
         </CardFooter>
       </Card>
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{title} - Expanded View</DialogTitle>
-          <DialogDescription>Detailed breakdown of {title.toLowerCase()}</DialogDescription>
+          <DialogTitle>{measure.label} - Expanded View</DialogTitle>
+          <DialogDescription>
+            Detailed breakdown of {measure.label.toLowerCase()}
+          </DialogDescription>
           <button
             onClick={downloadAsPNG}
             className="ring-offset-background focus:ring-ring absolute top-4 right-10 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden"
@@ -112,12 +162,22 @@ export function KpiCard({
 
           <div className="space-y-3 rounded-md border p-4">
             <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Current</span>
+              <span className="text-sm font-medium">{value}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Previous</span>
+              <span className="text-sm font-medium">
+                {formatKpiValue(data.previous, measure.formatter)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Change</span>
-              <span className="text-sm font-medium">{footerLabel}</span>
+              <span className="text-sm font-medium">{footer.label}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Period</span>
-              <span className="text-sm font-medium">{footerDescription}</span>
+              <span className="text-sm font-medium">{footer.description}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Trend</span>
