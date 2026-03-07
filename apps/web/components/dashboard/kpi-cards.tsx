@@ -1,45 +1,60 @@
-"use client"
-
+import { TrendingUpIcon, TrendingDownIcon } from "lucide-react"
+import { Badge } from "@workspace/ui/components/badge"
 import {
   Card,
-  CardContent,
+  CardAction,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@workspace/ui/components/card"
-import {
-  ArrowUpRight,
-  ArrowDownRight,
-  Copy,
-  Trash2,
-  Diamond,
-  DollarSign,
-} from "lucide-react"
 
 interface KpiCardProps {
   title: string
   value: string
-  change: string
-  period: string
-  icon?: React.ReactNode
-  trend?: "up" | "down" | "neutral"
+  delta: string
+  trend: "up" | "down"
+  footerLabel: string
+  footerDescription: string
 }
 
-function KpiCard({ title, value, change, period, icon, trend = "up" }: KpiCardProps) {
+function KpiCard({
+  title,
+  value,
+  delta,
+  trend,
+  footerLabel,
+  footerDescription,
+}: KpiCardProps) {
   return (
-    <Card className="min-w-[180px] flex-1 gap-2 py-3">
-      <CardContent className="flex flex-col gap-1 p-0 px-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">{title}</span>
-          {icon && <span className="text-muted-foreground">{icon}</span>}
-        </div>
-        <span className="text-2xl font-bold tracking-tight">{value}</span>
-        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+    <Card className="@container/card">
+      <CardHeader>
+        <CardDescription>{title}</CardDescription>
+        <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+          {value}
+        </CardTitle>
+        <CardAction>
+          <Badge variant="outline">
+            {trend === "up" ? (
+              <TrendingUpIcon data-icon="inline-start" />
+            ) : (
+              <TrendingDownIcon data-icon="inline-start" />
+            )}
+            {delta}
+          </Badge>
+        </CardAction>
+      </CardHeader>
+      <CardFooter className="flex-col items-start gap-1.5 text-sm">
+        <div className="line-clamp-1 flex gap-2 font-medium">
+          {footerLabel}
           {trend === "up" ? (
-            <ArrowUpRight className="size-3 text-emerald-500" />
-          ) : trend === "down" ? (
-            <ArrowDownRight className="size-3 text-red-500" />
-          ) : null}
-          {change} {period}
-        </span>
-      </CardContent>
+            <TrendingUpIcon className="size-4" />
+          ) : (
+            <TrendingDownIcon className="size-4" />
+          )}
+        </div>
+        <div className="text-muted-foreground">{footerDescription}</div>
+      </CardFooter>
     </Card>
   )
 }
@@ -48,72 +63,72 @@ const kpiData: KpiCardProps[] = [
   {
     title: "Cash Out",
     value: "$3.96B",
-    change: "-$1.13B since 180 days ago",
-    period: "",
-    icon: <Copy className="size-4" />,
+    delta: "-22.2%",
     trend: "down",
+    footerLabel: "Down $1.13B this period",
+    footerDescription: "Compared to 180 days ago",
   },
   {
     title: "Funding Amount",
     value: "$5.57B",
-    change: "+ $738.8M since 180 days ago",
-    period: "",
-    icon: <Copy className="size-4" />,
+    delta: "+15.3%",
     trend: "up",
+    footerLabel: "Up $738.8M this period",
+    footerDescription: "Compared to 180 days ago",
   },
   {
     title: "Collateral Amount",
     value: "$7.45B",
-    change: "+ $2.25B since 180 days ago",
-    period: "",
-    icon: <Trash2 className="size-4" />,
+    delta: "+43.3%",
     trend: "up",
+    footerLabel: "Up $2.25B this period",
+    footerDescription: "Compared to 180 days ago",
   },
   {
     title: "Average Spread",
     value: "58.01bps",
-    change: "+ 24.66bps since 180 days ago",
-    period: "",
-    icon: <Diamond className="size-4" />,
+    delta: "+73.9%",
     trend: "up",
+    footerLabel: "Up 24.66bps this period",
+    footerDescription: "Compared to 180 days ago",
   },
   {
     title: "Average Maturity",
-    value: "113days",
-    change: "-2days since 180 days ago",
-    period: "",
-    icon: <Diamond className="size-4" />,
+    value: "113 days",
+    delta: "-1.7%",
     trend: "down",
+    footerLabel: "Down 2 days this period",
+    footerDescription: "Compared to 180 days ago",
   },
   {
     title: "Daily Accrual",
     value: "$90K",
-    change: "+ $45K since 180 days ago",
-    period: "",
-    icon: <DollarSign className="size-4" />,
+    delta: "+100%",
     trend: "up",
+    footerLabel: "Up $45K this period",
+    footerDescription: "Compared to 180 days ago",
   },
   {
     title: "Projected Accrual",
     value: "$11.2M",
-    change: "+ $7.3M since 180 days ago",
-    period: "",
-    icon: <DollarSign className="size-4" />,
+    delta: "+187%",
     trend: "up",
+    footerLabel: "Up $7.3M this period",
+    footerDescription: "Compared to 180 days ago",
   },
   {
     title: "Realized Accrual",
     value: "$14.2M",
-    change: "+ $6.2M since 180 days ago",
-    period: "",
-    icon: <DollarSign className="size-4" />,
+    delta: "+77.5%",
     trend: "up",
+    footerLabel: "Up $6.2M this period",
+    footerDescription: "Compared to 180 days ago",
   },
 ]
 
 export function KpiCards() {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
+    <div className="*:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {kpiData.map((kpi) => (
         <KpiCard key={kpi.title} {...kpi} />
       ))}
