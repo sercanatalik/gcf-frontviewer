@@ -54,8 +54,8 @@ export const radialCharts: RadialChartDef[] = [
     centerLabel: "Avg",
     formatter: "bps",
   },
-    {
-    key: "WrongWayRisk",
+  {
+    key: "wrongWayRisk",
     title: "Wrong Way Risk",
     description: "Wrong Way Risk by Country",
     measure: { field: "fundingAmount", aggregation: "sum" },
@@ -63,5 +63,5 @@ export const radialCharts: RadialChartDef[] = [
     limit: 6,
     centerLabel: "Total",
     formatter: "currency",
-  }
+  },
 ]
