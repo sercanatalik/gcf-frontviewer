@@ -44,12 +44,15 @@ export function useBottomTabsData(tabDefs: TabDef[]) {
   })
 
   const isLoading = results.some((r) => r.isLoading)
-  const data: Record<string, TabRow[]> = {}
-  for (let i = 0; i < tabDefs.length; i++) {
-    const result = results[i]
-    const tab = tabDefs[i]
-    if (result?.data && tab) data[tab.key] = result.data
-  }
+  const data = useMemo(() => {
+    const map: Record<string, TabRow[]> = {}
+    for (let i = 0; i < tabDefs.length; i++) {
+      const result = results[i]
+      const tab = tabDefs[i]
+      if (result?.data && tab) map[tab.key] = result.data
+    }
+    return map
+  }, [results, tabDefs])
 
   return { data, isLoading }
 }
