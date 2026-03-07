@@ -15,7 +15,7 @@ export function CashOutChart() {
   const [groupBy, setGroupBy] = React.useState<string | undefined>(undefined)
 
   return (
-    <Card className="flex-1 overflow-hidden">
+    <Card className="overflow-hidden">
       <CardHeader className="flex-row items-center justify-between gap-3 pb-0">
         <div className="flex items-center gap-3">
           <div className="flex size-8 items-center justify-center rounded-lg bg-chart-3/10">

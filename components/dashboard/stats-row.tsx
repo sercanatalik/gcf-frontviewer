@@ -1,8 +1,4 @@
 import {
-  Card,
-  CardContent,
-} from "@/components/ui/card"
-import {
   Copy,
   Users,
   Briefcase,
@@ -10,80 +6,65 @@ import {
   DollarSign,
   BookOpen,
   UserCheck,
+  TrendingUp,
+  Minus,
 } from "lucide-react"
 
-interface StatCardProps {
+interface StatItem {
   label: string
   value: string | number
-  change: string
+  delta: number
   icon: React.ReactNode
+  color: string
 }
 
-function StatCard({ label, value, change, icon }: StatCardProps) {
-  return (
-    <Card size="sm" className="min-w-[130px] flex-1">
-      <CardContent className="flex flex-col gap-1 p-0 px-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">{label}</span>
-          {icon}
-        </div>
-        <span className="text-xl font-bold">{value}</span>
-        <span className="text-[11px] text-muted-foreground">{change}</span>
-      </CardContent>
-    </Card>
-  )
-}
-
-const statsData: StatCardProps[] = [
-  {
-    label: "#Trades",
-    value: 513,
-    change: "+ 26 since 180 days ago",
-    icon: <Copy className="size-3.5 text-muted-foreground" />,
-  },
-  {
-    label: "#Clients",
-    value: 76,
-    change: "+ 3 since 180 days ago",
-    icon: <Users className="size-3.5 text-muted-foreground" />,
-  },
-  {
-    label: "#Assets",
-    value: 198,
-    change: "+ 7 since 180 days ago",
-    icon: <Briefcase className="size-3.5 text-muted-foreground" />,
-  },
-  {
-    label: "#CollateralCurr...",
-    value: 19,
-    change: "+ 0 since 180 days ago",
-    icon: <Coins className="size-3.5 text-muted-foreground" />,
-  },
-  {
-    label: "#FundingCurre...",
-    value: 6,
-    change: "+ 0 since 180 days ago",
-    icon: <DollarSign className="size-3.5 text-muted-foreground" />,
-  },
-  {
-    label: "#Books",
-    value: 16,
-    change: "+ 2 since 180 days ago",
-    icon: <BookOpen className="size-3.5 text-muted-foreground" />,
-  },
-  {
-    label: "#Trader",
-    value: 5,
-    change: "+ 1 since 180 days ago",
-    icon: <UserCheck className="size-3.5 text-muted-foreground" />,
-  },
+const statsData: StatItem[] = [
+  { label: "Trades", value: 513, delta: 26, icon: <Copy className="size-4" />, color: "hsl(217, 91%, 60%)" },
+  { label: "Clients", value: 76, delta: 3, icon: <Users className="size-4" />, color: "hsl(221, 83%, 53%)" },
+  { label: "Assets", value: 198, delta: 7, icon: <Briefcase className="size-4" />, color: "hsl(224, 76%, 48%)" },
+  { label: "Collateral Ccy", value: 19, delta: 0, icon: <Coins className="size-4" />, color: "hsl(226, 71%, 40%)" },
+  { label: "Funding Ccy", value: 6, delta: 0, icon: <DollarSign className="size-4" />, color: "hsl(217, 60%, 68%)" },
+  { label: "Books", value: 16, delta: 2, icon: <BookOpen className="size-4" />, color: "hsl(217, 91%, 60%)" },
+  { label: "Traders", value: 5, delta: 1, icon: <UserCheck className="size-4" />, color: "hsl(221, 83%, 53%)" },
 ]
 
 export function StatsRow() {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-2">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {statsData.map((stat) => (
-        <StatCard key={stat.label} {...stat} />
+        <div
+          key={stat.label}
+          className="flex items-center gap-4 border bg-card px-4 py-4"
+          style={{ borderLeftWidth: 3, borderLeftColor: stat.color }}
+        >
+          <div
+            className="flex size-10 shrink-0 items-center justify-center rounded-lg"
+            style={{ backgroundColor: stat.color + "18", color: stat.color }}
+          >
+            {stat.icon}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="truncate text-xs text-muted-foreground">
+              {stat.label}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl font-semibold tabular-nums leading-tight">
+                {stat.value}
+              </span>
+              {stat.delta > 0 ? (
+                <span className="flex items-center gap-0.5 text-[10px] text-emerald-500">
+                  <TrendingUp className="size-2.5" />
+                  +{stat.delta}
+                </span>
+              ) : (
+                <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <Minus className="size-2.5" />
+                  0
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   )

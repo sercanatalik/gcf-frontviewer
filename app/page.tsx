@@ -17,11 +17,12 @@ export default function Page() {
       <KpiCards />
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        <CashOutChart />
+        <div className="flex flex-1 flex-col gap-4">
+          <CashOutChart />
+          <StatsRow />
+        </div>
         <RecentTrades />
       </div>
-
-      <StatsRow />
 
       <BottomTabs />
     </div>
