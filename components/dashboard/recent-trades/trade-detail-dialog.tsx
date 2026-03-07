@@ -160,7 +160,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                 {trade.tradeStatus && <Badge variant="outline">{trade.tradeStatus}</Badge>}
                 {trade.maturityIsOpen === 1 && <Badge variant="outline">Open</Badge>}
                 {isUrgent && (
-                  <Badge variant="destructive">{maturityDays}d left</Badge>
+                  <Badge variant="outline" className="border-foreground/30 font-bold">{maturityDays}d left</Badge>
                 )}
               </div>
             </div>
@@ -171,9 +171,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
             <KpiCard
               label="Funding"
               value={formatCurrency(trade.fundingAmount)}
-              className={trade.fundingAmount >= 0
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-600 dark:text-red-400"}
+              className={trade.fundingAmount >= 0 ? "text-foreground" : "text-muted-foreground"}
             />
             <KpiCard label="Collateral" value={formatCurrency(trade.collateralAmount)} />
             <KpiCard label="Exposure" value={formatCurrency(trade.financingExposure)} />
@@ -182,7 +180,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
             <KpiCard
               label="Maturity"
               value={maturityDays > 0 ? `${maturityDays}d` : maturityDays === 0 ? "Today" : "Expired"}
-              className={cn(isUrgent && "text-destructive")}
+              className={cn(isUrgent && "text-foreground font-black")}
             />
           </div>
         </div>
@@ -202,7 +200,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                 {trade.age != null && `Age: ${trade.age}d`}
               </span>
               <span className="text-muted-foreground">
-                Maturity: <span className={cn("font-medium", isUrgent ? "text-destructive" : "text-foreground")}>
+                Maturity: <span className={cn("font-medium", isUrgent ? "text-foreground font-bold" : "text-foreground")}>
                   {formatDate(trade.maturityDt)}
                 </span>
               </span>
@@ -211,7 +209,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
               <div
                 className={cn(
                   "h-full rounded-full transition-all",
-                  isUrgent ? "bg-destructive" : "bg-primary",
+                  isUrgent ? "bg-foreground" : "bg-primary",
                 )}
                 style={{ width: `${progress}%` }}
               />
@@ -329,8 +327,8 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                   <SectionHeader title="Amounts" />
                   <InfoItem icon={Wallet} label="Funding" value={
                     <span className={trade.fundingAmount >= 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400"
+                      ? "text-foreground"
+                      : "text-muted-foreground"
                     }>{formatCurrency(trade.fundingAmount)}</span>
                   } />
                   <InfoItem icon={Wallet} label="Funding (LCY)" value={formatCurrency(trade.fundingAmountLCY)} />
@@ -449,12 +447,12 @@ function DateCard({
   return (
     <div className={cn(
       "flex items-center gap-3 rounded-lg border p-3",
-      urgent && "border-destructive/20 bg-destructive/5",
+      urgent && "border-foreground/20 bg-muted",
     )}>
-      <CalendarClock className={cn("size-4", urgent ? "text-destructive" : "text-muted-foreground")} />
+      <CalendarClock className={cn("size-4", urgent ? "text-foreground" : "text-muted-foreground")} />
       <div>
-        <p className={cn("text-[11px]", urgent ? "text-destructive/70" : "text-muted-foreground")}>{label}</p>
-        <p className={cn("text-sm font-medium tabular-nums", urgent && "text-destructive")}>{formatDate(date)}</p>
+        <p className={cn("text-[11px]", urgent ? "text-foreground/70" : "text-muted-foreground")}>{label}</p>
+        <p className={cn("text-sm font-medium tabular-nums", urgent && "text-foreground font-bold")}>{formatDate(date)}</p>
       </div>
     </div>
   )

@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card"
 import {
   Tabs,
@@ -14,13 +13,24 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp,
+} from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { cn } from "@/lib/utils"
 import type { Trade } from "./types"
 import { TradeItem } from "./trade-item"
 import { TradeDetailDialog } from "./trade-detail-dialog"
+import { formatCurrency } from "./utils"
 
 const ITEMS_PER_PAGE = 8
 
@@ -30,11 +40,42 @@ async function fetchTrades(sort: "recent" | "maturity"): Promise<Trade[]> {
   return res.json()
 }
 
-function getStats(trades: Trade[]) {
+interface Stats {
+  total: number
+  counterparties: number
+  desks: number
+  regions: number
+  totalFunding: number
+  totalExposure: number
+  avgMargin: number
+  payCount: number
+  recCount: number
+  productBreakdown: { name: string; count: number }[]
+}
+
+function getStats(trades: Trade[]): Stats {
   const counterparties = new Set(trades.map((t) => t.counterParty)).size
   const desks = new Set(trades.map((t) => t.hmsDesk)).size
   const regions = new Set(trades.map((t) => t.region)).size
-  return { total: trades.length, counterparties, desks, regions }
+  const totalFunding = trades.reduce((s, t) => s + (t.fundingAmount || 0), 0)
+  const totalExposure = trades.reduce((s, t) => s + (t.financingExposure || 0), 0)
+  const margins = trades.filter((t) => t.fundingMargin != null)
+  const avgMargin = margins.length > 0
+    ? margins.reduce((s, t) => s + t.fundingMargin, 0) / margins.length
+    : 0
+  const payCount = trades.filter((t) => t.side === "PAY").length
+  const recCount = trades.filter((t) => t.side === "RECEIVE" || t.side === "REC").length
+
+  const productMap = new Map<string, number>()
+  for (const t of trades) {
+    if (t.productType) productMap.set(t.productType, (productMap.get(t.productType) || 0) + 1)
+  }
+  const productBreakdown = [...productMap.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 4)
+
+  return { total: trades.length, counterparties, desks, regions, totalFunding, totalExposure, avgMargin, payCount, recCount, productBreakdown }
 }
 
 export function RecentTrades() {
@@ -71,14 +112,75 @@ export function RecentTrades() {
 
   return (
     <>
-      <Card className="w-full min-w-[320px] lg:w-[460px]">
-        <CardHeader>
-          <CardTitle>{activeTab === "recent" ? "Recent Trades" : "Maturing Soon"}</CardTitle>
-          <CardDescription>
-            {stats.total} trades across {stats.counterparties} counterparties, {stats.desks} desks, {stats.regions} regions
-          </CardDescription>
+      <Card className="w-full min-w-[360px] lg:w-[520px]">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base">
+              {activeTab === "recent" ? "Recent Trades" : "Maturing Soon"}
+            </CardTitle>
+            <Badge variant="secondary" className="text-[10px] tabular-nums">
+              {stats.total} trades
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent>
+
+        {/* Summary strip */}
+        <div className="px-6 pb-3">
+          {isLoading ? (
+            <div className="flex gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-12 flex-1 rounded-md" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-2">
+              <MiniStat
+                label="Net Funding"
+                value={formatCurrency(stats.totalFunding)}
+                icon={stats.totalFunding >= 0 ? ArrowUpRight : ArrowDownRight}
+                color={stats.totalFunding >= 0 ? "text-foreground" : "text-muted-foreground"}
+              />
+              <MiniStat
+                label="Exposure"
+                value={formatCurrency(stats.totalExposure)}
+                icon={TrendingUp}
+              />
+              <MiniStat
+                label="Avg Margin"
+                value={`${stats.avgMargin.toFixed(2)}bp`}
+              />
+              <MiniStat
+                label="PAY / REC"
+                value={`${stats.payCount} / ${stats.recCount}`}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Product breakdown pills */}
+        {!isLoading && stats.productBreakdown.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-6 pb-3">
+            {stats.productBreakdown.map((p) => (
+              <span
+                key={p.name}
+                className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
+              >
+                {p.name}
+                <span className="font-semibold tabular-nums text-foreground">{p.count}</span>
+              </span>
+            ))}
+            {stats.counterparties > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                Counterparties
+                <span className="font-semibold tabular-nums text-foreground">{stats.counterparties}</span>
+              </span>
+            )}
+          </div>
+        )}
+
+        <Separator />
+
+        <CardContent className="pt-3">
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="w-full">
               <TabsTrigger value="recent" className="flex-1">Recent</TabsTrigger>
@@ -121,6 +223,28 @@ export function RecentTrades() {
   )
 }
 
+function MiniStat({
+  label,
+  value,
+  icon: Icon,
+  color,
+}: {
+  label: string
+  value: string
+  icon?: React.ComponentType<{ className?: string }>
+  color?: string
+}) {
+  return (
+    <div className="rounded-md border bg-muted/30 px-2.5 py-2">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <div className="mt-0.5 flex items-center gap-1">
+        {Icon && <Icon className={cn("size-3", color || "text-muted-foreground")} />}
+        <span className={cn("text-xs font-semibold tabular-nums", color)}>{value}</span>
+      </div>
+    </div>
+  )
+}
+
 function TradeList({
   trades,
   variant,
@@ -142,15 +266,25 @@ function TradeList({
 }) {
   if (isLoading) {
     return (
-      <div className="flex h-[380px] items-center justify-center text-sm text-muted-foreground">
-        Loading trades…
+      <div className="flex flex-col gap-3 py-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-start gap-3 px-3">
+            <Skeleton className="size-7 rounded-full" />
+            <div className="flex flex-1 flex-col gap-1.5">
+              <Skeleton className="h-3.5 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+              <Skeleton className="h-2.5 w-2/5" />
+            </div>
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
       </div>
     )
   }
 
   if (trades.length === 0) {
     return (
-      <div className="flex h-[380px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-[420px] items-center justify-center text-sm text-muted-foreground">
         No trades available
       </div>
     )
@@ -158,13 +292,13 @@ function TradeList({
 
   return (
     <>
-      <ScrollArea className="h-[380px]">
+      <ScrollArea className="h-[420px]">
         {trades.map((trade) => (
           <TradeItem key={trade.tradeId} trade={trade} variant={variant} onClick={onClick} />
         ))}
       </ScrollArea>
       {totalPages > 1 && (
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-2 flex items-center justify-between border-t pt-2">
           <Button
             variant="ghost"
             size="sm"
@@ -175,8 +309,8 @@ function TradeList({
             <ChevronLeft className="size-3" />
             Previous
           </Button>
-          <span className="text-xs tabular-nums text-muted-foreground">
-            {page + 1} / {totalPages}
+          <span className="text-[11px] tabular-nums text-muted-foreground">
+            {page + 1} of {totalPages}
           </span>
           <Button
             variant="ghost"
