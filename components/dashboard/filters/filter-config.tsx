@@ -34,6 +34,9 @@ interface FilterFieldDef {
   icon: React.ReactNode
   type: "select" | "text" | "date"
   operators: string[]
+  singleSelect?: boolean
+  sortDesc?: boolean
+  pinned?: boolean
 }
 
 const filterFields: Record<string, FilterFieldDef> = {
@@ -52,7 +55,7 @@ const filterFields: Record<string, FilterFieldDef> = {
   issuerName:            { column: "issuerName",            icon: <Building className="size-3.5 text-blue-500" />,          type: "text",   operators: textOperators },
   counterpartyParentName:{ column: "counterpartyParentName",icon: <Users className="size-3.5 text-amber-500" />,            type: "text",   operators: textOperators },
   cpType:                { column: "cpType",                icon: <Network className="size-3.5 text-rose-500" />,           type: "select", operators: selectOperators },
-  asofDate:              { column: "asofDate",              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "select",   operators: textOperators },
+  asofDate:              { column: "asofDate",              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "select",   operators: [FilterOperators.IS], singleSelect: true, sortDesc: true, pinned: true },
 }
 
 // Derived maps consumed by RiskFilter
@@ -64,8 +67,8 @@ export const iconMapping: Record<string, React.ReactNode> = Object.fromEntries(
   Object.entries(filterFields).map(([k, v]) => [k, v.icon]),
 )
 
-export const operatorConfig: Record<string, { operators: string[]; type: string; field: string }> = Object.fromEntries(
-  Object.entries(filterFields).map(([k, v]) => [k, { operators: v.operators, type: v.type, field: v.column }]),
+export const operatorConfig: Record<string, { operators: string[]; type: string; field: string; singleSelect?: boolean; sortDesc?: boolean; pinned?: boolean }> = Object.fromEntries(
+  Object.entries(filterFields).map(([k, v]) => [k, { operators: v.operators, type: v.type, field: v.column, singleSelect: v.singleSelect, sortDesc: v.sortDesc, pinned: v.pinned }]),
 )
 
 export const filterOperators: Record<string, string> = {

@@ -95,6 +95,10 @@ export function isDateFilter(filterType: string, operatorConfig: Record<string, 
   return operatorConfig[filterType]?.type === "date"
 }
 
+export function isSingleSelect(filterType: string, operatorConfig: Record<string, any>): boolean {
+  return operatorConfig[filterType]?.singleSelect === true
+}
+
 function FilterOperatorDropdown({
   filterType,
   operator,
@@ -232,11 +236,13 @@ function FilterValueDateCombobox({
   filterValues,
   setFilterValues,
   filterViewToFilterOptions,
+  pinned,
 }: {
   filterType: string
   filterValues: string[]
   setFilterValues: (filterValues: string[]) => void
   filterViewToFilterOptions: Record<string, FilterOption[]>
+  pinned?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [commandInput, setCommandInput] = useState("")
@@ -248,7 +254,7 @@ function FilterValueDateCombobox({
 
   return (
     <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setCommandInput("") }}>
-      <PopoverTrigger className="shrink-0 rounded-none bg-muted px-1.5 py-1 text-muted-foreground transition hover:bg-muted/50 hover:text-primary">
+      <PopoverTrigger className={cn("shrink-0 bg-muted px-1.5 py-1 text-muted-foreground transition hover:bg-muted/50 hover:text-primary", pinned ? "rounded-r" : "rounded-none")}>
         {filterValues?.[0]}
       </PopoverTrigger>
       <PopoverContent className="w-fit p-0">
@@ -303,50 +309,59 @@ export default function Filters({
     <div className="flex gap-2">
       {filters
         .filter((filter) => filter.value?.length > 0)
-        .map((filter) => (
-          <div key={filter.id} className="flex items-center gap-[1px] text-xs">
-            <div className="flex shrink-0 items-center gap-1.5 rounded-l bg-muted px-1.5 py-1">
-              <FilterIcon type={filter.type} iconMapping={iconMapping} />
-              {filter.type}
+        .map((filter) => {
+          const pinned = operatorConfig[filter.type]?.pinned
+          const singleOp = (operatorConfig[filter.type]?.operators?.length ?? 0) <= 1
+          return (
+            <div key={filter.id} className="flex items-center gap-[1px] text-xs">
+              <div className={cn("flex shrink-0 items-center gap-1.5 bg-muted px-1.5 py-1", pinned && singleOp ? "rounded-l" : "rounded-l")}>
+                <FilterIcon type={filter.type} iconMapping={iconMapping} />
+                {filter.type}
+              </div>
+              {!(pinned && singleOp) && (
+                <FilterOperatorDropdown
+                  filterType={filter.type}
+                  operator={filter.operator}
+                  operatorConfig={operatorConfig}
+                  setOperator={(operator) => {
+                    filtersActions.updateFilter(filter.id, { operator })
+                  }}
+                />
+              )}
+              {isDateFilter(filter.type, operatorConfig) || isSingleSelect(filter.type, operatorConfig) ? (
+                <FilterValueDateCombobox
+                  filterType={filter.type}
+                  filterValues={filter.value}
+                  filterViewToFilterOptions={config.filterViewToFilterOptions}
+                  pinned={pinned}
+                  setFilterValues={(filterValues) => {
+                    filtersActions.updateFilter(filter.id, { value: filterValues })
+                  }}
+                />
+              ) : (
+                <FilterValueCombobox
+                  filterType={filter.type}
+                  filterValues={filter.value}
+                  filterViewToFilterOptions={config.filterViewToFilterOptions}
+                  iconMapping={iconMapping}
+                  setFilterValues={(filterValues) => {
+                    filtersActions.updateFilter(filter.id, { value: filterValues })
+                  }}
+                />
+              )}
+              {!pinned && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => filtersActions.removeFilter(filter.id)}
+                  className="size-6 shrink-0 rounded-l-none rounded-r-sm bg-muted text-muted-foreground transition hover:bg-muted/50 hover:text-primary"
+                >
+                  <X className="size-3" />
+                </Button>
+              )}
             </div>
-            <FilterOperatorDropdown
-              filterType={filter.type}
-              operator={filter.operator}
-              operatorConfig={operatorConfig}
-              setOperator={(operator) => {
-                filtersActions.updateFilter(filter.id, { operator })
-              }}
-            />
-            {isDateFilter(filter.type, operatorConfig) ? (
-              <FilterValueDateCombobox
-                filterType={filter.type}
-                filterValues={filter.value}
-                filterViewToFilterOptions={config.filterViewToFilterOptions}
-                setFilterValues={(filterValues) => {
-                  filtersActions.updateFilter(filter.id, { value: filterValues })
-                }}
-              />
-            ) : (
-              <FilterValueCombobox
-                filterType={filter.type}
-                filterValues={filter.value}
-                filterViewToFilterOptions={config.filterViewToFilterOptions}
-                iconMapping={iconMapping}
-                setFilterValues={(filterValues) => {
-                  filtersActions.updateFilter(filter.id, { value: filterValues })
-                }}
-              />
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => filtersActions.removeFilter(filter.id)}
-              className="size-6 shrink-0 rounded-l-none rounded-r-sm bg-muted text-muted-foreground transition hover:bg-muted/50 hover:text-primary"
-            >
-              <X className="size-3" />
-            </Button>
-          </div>
-        ))}
+          )
+        })}
     </div>
   )
 }

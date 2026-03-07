@@ -23,7 +23,7 @@ import Filters, {
 } from "./filter-controls"
 import { filtersStore, filtersActions } from "@/lib/store/filters"
 import { dateValues } from "./filter-config"
-import { isDateFilter } from "./filter-controls"
+import { isDateFilter, isSingleSelect } from "./filter-controls"
 
 interface RiskFilterProps {
   filterTypes?: Record<string, string>
@@ -64,7 +64,8 @@ function useFilterOptions(
         options[key] = dateValues.map((name) => ({ name, icon: iconMapping[key] }))
       } else {
         const values = queries[i]?.data ?? []
-        options[key] = values.map((name) => ({ name, icon: iconMapping[key] }))
+        const sorted = operatorConfig[key]?.sortDesc ? [...values].reverse() : values
+        options[key] = sorted.map((name) => ({ name, icon: iconMapping[key] }))
       }
     })
     return options
@@ -141,7 +142,9 @@ export function RiskFilter({
     const existingFilter = filters.find((f) => f.type === filterType && f.field === field)
 
     if (existingFilter) {
-      if (!existingFilter.value.includes(filterValue)) {
+      if (isSingleSelect(filterType, operatorConfig)) {
+        filtersActions.updateFilter(existingFilter.id, { value: [filterValue] })
+      } else if (!existingFilter.value.includes(filterValue)) {
         filtersActions.updateFilter(existingFilter.id, {
           value: [...existingFilter.value, filterValue],
         })
