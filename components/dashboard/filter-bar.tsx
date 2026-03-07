@@ -10,6 +10,7 @@ import {
 } from "./filters/filter-config"
 import { filtersActions } from "@/lib/store/filters"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { NavMenu } from "@/components/nav-menu"
 
 interface FilterBarProps {
   tableName?: string
@@ -29,6 +30,7 @@ export function FilterBar({ tableName = "gcf_risk_mv" }: FilterBarProps) {
         operatorConfig={operatorConfig}
       />
       <ThemeToggle />
+      <NavMenu />
     </div>
   )
 }
