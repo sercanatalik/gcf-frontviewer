@@ -37,8 +37,14 @@ interface FilterFieldDef {
 }
 
 const filterFields: Record<string, FilterFieldDef> = {
+  hmsDesk:               { column: "hmsDesk",               icon: <BarChart3 className="size-3.5 text-cyan-500" />,         type: "select", operators: selectOperators },
+  hmsSL1:                { column: "hmsSL1",                icon: <Globe className="size-3.5 text-violet-500" />,           type: "select", operators: selectOperators },
+  hmsSL2:                { column: "hmsSL2",                icon: <Globe className="size-3.5 text-fuchsia-500" />,          type: "select", operators: selectOperators },
+  tradeDt:                { column: "tradeDt",                icon: <Calendar className="size-3.5 text-yellow-500" />,        type: "date",   operators: dateOperators },
+  maturityDt:             { column: "maturityDt",             icon: <Calendar className="size-3.5 text-red-500" />,           type: "date",   operators: dateOperators },
+  tenor:                 { column: "tenor",                 icon: <Calendar className="size-3.5 text-green-500" />,         type: "select", operators: selectOperators },
   counterParty:          { column: "counterParty",          icon: <User className="size-3.5 text-orange-500" />,            type: "text",   operators: textOperators },
-  asofDate:              { column: "asofDate",              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "date",   operators: dateOperators },
+  
   productType:           { column: "productType",           icon: <Tag className="size-3.5 text-green-500" />,              type: "select", operators: selectOperators },
   hmsBook:               { column: "hmsBook",               icon: <Layers className="size-3.5 text-purple-500" />,          type: "select", operators: selectOperators },
   collateralDesc:        { column: "collateralDesc",        icon: <Shield className="size-3.5 text-indigo-500" />,          type: "text",   operators: textOperators },
@@ -46,9 +52,7 @@ const filterFields: Record<string, FilterFieldDef> = {
   issuerName:            { column: "issuerName",            icon: <Building className="size-3.5 text-blue-500" />,          type: "text",   operators: textOperators },
   counterpartyParentName:{ column: "counterpartyParentName",icon: <Users className="size-3.5 text-amber-500" />,            type: "text",   operators: textOperators },
   cpType:                { column: "cpType",                icon: <Network className="size-3.5 text-rose-500" />,           type: "select", operators: selectOperators },
-  hmsDesk:               { column: "hmsDesk",               icon: <BarChart3 className="size-3.5 text-cyan-500" />,         type: "select", operators: selectOperators },
-  hmsSL1:                { column: "hmsSL1",                icon: <Globe className="size-3.5 text-violet-500" />,           type: "select", operators: selectOperators },
-  hmsSL2:                { column: "hmsSL2",                icon: <Globe className="size-3.5 text-fuchsia-500" />,          type: "select", operators: selectOperators },
+  asofDate:              { column: "asofDate",              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "date",   operators: selectOperators },
 }
 
 // Derived maps consumed by RiskFilter

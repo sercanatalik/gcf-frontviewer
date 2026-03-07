@@ -26,6 +26,8 @@ function KpiCard({
   footerLabel,
   footerDescription,
 }: KpiCardProps) {
+  const TrendIcon = trend === "up" ? TrendingUpIcon : TrendingDownIcon
+
   return (
     <Card className="@container/card">
       <CardHeader>
@@ -35,11 +37,7 @@ function KpiCard({
         </CardTitle>
         <CardAction>
           <Badge variant="outline">
-            {trend === "up" ? (
-              <TrendingUpIcon data-icon="inline-start" />
-            ) : (
-              <TrendingDownIcon data-icon="inline-start" />
-            )}
+            <TrendIcon data-icon="inline-start" />
             {delta}
           </Badge>
         </CardAction>
@@ -47,11 +45,7 @@ function KpiCard({
       <CardFooter className="flex-col items-start gap-1.5 text-sm">
         <div className="line-clamp-1 flex gap-2 font-medium">
           {footerLabel}
-          {trend === "up" ? (
-            <TrendingUpIcon className="size-4" />
-          ) : (
-            <TrendingDownIcon className="size-4" />
-          )}
+          <TrendIcon className="size-4" />
         </div>
         <div className="text-muted-foreground">{footerDescription}</div>
       </CardFooter>

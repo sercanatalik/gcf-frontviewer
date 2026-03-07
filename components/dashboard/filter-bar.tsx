@@ -7,7 +7,6 @@ import {
   filterOperators,
   iconMapping,
   operatorConfig,
-  dateValues,
 } from "./filters/filter-config"
 import { filtersActions } from "@/lib/store/filters"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -28,7 +27,6 @@ export function FilterBar({ tableName = "gcf_risk_mv" }: FilterBarProps) {
         filterOperators={filterOperators}
         iconMapping={iconMapping}
         operatorConfig={operatorConfig}
-        dateValues={dateValues}
       />
       <ThemeToggle />
     </div>

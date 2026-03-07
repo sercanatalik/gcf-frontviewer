@@ -23,13 +23,13 @@ import Filters, {
 } from "./filter-controls"
 import { filtersStore, filtersActions } from "@/lib/store/filters"
 import { dateValues } from "./filter-config"
+import { isDateFilter } from "./filter-controls"
 
 interface RiskFilterProps {
   filterTypes?: Record<string, string>
   filterOperators?: Record<string, string>
   iconMapping?: Record<string, React.ReactNode>
   operatorConfig?: Record<string, any>
-  dateValues?: string[]
 }
 
 async function fetchDistinctValues(table: string, column: string): Promise<string[]> {
@@ -49,12 +49,10 @@ function useFilterOptions(
 
   const queries = useQueries({
     queries: entries.map(([key, column]) => {
-      const isDate = operatorConfig[key]?.type === "date"
       return {
         queryKey: ["distinct", tableName, column] as const,
         queryFn: () => fetchDistinctValues(tableName, column),
-        enabled: !!tableName && !isDate,
-        staleTime: 5 * 60 * 1000,
+        enabled: !!tableName && !isDateFilter(key, operatorConfig),
       }
     }),
   })
@@ -62,8 +60,7 @@ function useFilterOptions(
   return React.useMemo(() => {
     const options: Record<string, FilterOption[]> = {}
     entries.forEach(([key], i) => {
-      const isDate = operatorConfig[key]?.type === "date"
-      if (isDate) {
+      if (isDateFilter(key, operatorConfig)) {
         options[key] = dateValues.map((name) => ({ name, icon: iconMapping[key] }))
       } else {
         const values = queries[i]?.data ?? []

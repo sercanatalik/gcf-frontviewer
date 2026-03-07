@@ -147,11 +147,9 @@ export function RecentTrades() {
           </TabsList>
           <TabsContent value="recent">
             <ScrollArea className="h-[380px]">
-              <div className="flex flex-col">
-                {recentTradesData.map((trade) => (
-                  <TradeItem key={trade.id} trade={trade} />
-                ))}
-              </div>
+              {recentTradesData.map((trade) => (
+                <TradeItem key={trade.id} trade={trade} />
+              ))}
             </ScrollArea>
             <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
               <button className="flex items-center gap-1 hover:text-foreground">

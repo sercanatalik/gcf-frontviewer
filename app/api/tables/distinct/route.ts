@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const query = `
       SELECT DISTINCT ${expr} AS value
       FROM ${table}
-      WHERE ${column} IS NOT NULL AND ${expr} != ''
+      WHERE ${column} IS NOT NULL AND ${column} != ''
       ORDER BY value
       LIMIT 1000
     `
@@ -41,7 +41,9 @@ export async function GET(request: NextRequest) {
     const rows = await result.json<{ value: string }>()
     const values = rows.map((r) => r.value)
 
-    return NextResponse.json(values)
+    return NextResponse.json(values, {
+      headers: { "Cache-Control": "public, max-age=300, s-maxage=300" },
+    })
   } catch (error) {
     console.error("Error fetching distinct values:", error)
 

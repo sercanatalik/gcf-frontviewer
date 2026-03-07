@@ -91,7 +91,7 @@ function getFilterOperators(
   return config.operators
 }
 
-function isDateFilter(filterType: string, operatorConfig: Record<string, any>): boolean {
+export function isDateFilter(filterType: string, operatorConfig: Record<string, any>): boolean {
   return operatorConfig[filterType]?.type === "date"
 }
 
