@@ -1,0 +1,68 @@
+import type { KpiCardProps } from "./types"
+
+export const kpiData: KpiCardProps[] = [
+  {
+    title: "Cash Out",
+    value: "$3.96B",
+    delta: "-22.2%",
+    trend: "down",
+    footerLabel: "Down $1.13B this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+  {
+    title: "Funding Amount",
+    value: "$5.57B",
+    delta: "+15.3%",
+    trend: "up",
+    footerLabel: "Up $738.8M this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+  {
+    title: "Collateral Amount",
+    value: "$7.45B",
+    delta: "+43.3%",
+    trend: "up",
+    footerLabel: "Up $2.25B this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+  {
+    title: "Average Spread",
+    value: "58.01bps",
+    delta: "+73.9%",
+    trend: "up",
+    footerLabel: "Up 24.66bps this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+  {
+    title: "Average Maturity",
+    value: "113 days",
+    delta: "-1.7%",
+    trend: "down",
+    footerLabel: "Down 2 days this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+  {
+    title: "Daily Accrual",
+    value: "$90K",
+    delta: "+100%",
+    trend: "up",
+    footerLabel: "Up $45K this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+  {
+    title: "Projected Accrual",
+    value: "$11.2M",
+    delta: "+187%",
+    trend: "up",
+    footerLabel: "Up $7.3M this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+  {
+    title: "Realized Accrual",
+    value: "$14.2M",
+    delta: "+77.5%",
+    trend: "up",
+    footerLabel: "Up $6.2M this period",
+    footerDescription: "Compared to 180 days ago",
+  },
+]
