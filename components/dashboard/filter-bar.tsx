@@ -10,6 +10,7 @@ import {
   dateValues,
 } from "./filters/filter-config"
 import { filtersActions } from "@/lib/store/filters"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface FilterBarProps {
   tableName?: string
@@ -21,12 +22,15 @@ export function FilterBar({ tableName = "gcf_risk_mv" }: FilterBarProps) {
   }, [tableName])
 
   return (
-    <RiskFilter
-      filterTypes={filterTypes}
-      filterOperators={filterOperators}
-      iconMapping={iconMapping}
-      operatorConfig={operatorConfig}
-      dateValues={dateValues}
-    />
+    <div className="flex items-center gap-2">
+      <RiskFilter
+        filterTypes={filterTypes}
+        filterOperators={filterOperators}
+        iconMapping={iconMapping}
+        operatorConfig={operatorConfig}
+        dateValues={dateValues}
+      />
+      <ThemeToggle />
+    </div>
   )
 }
