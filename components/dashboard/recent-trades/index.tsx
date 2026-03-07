@@ -38,7 +38,7 @@ import { TradeItem } from "./trade-item"
 import { TradeDetailDialog } from "./trade-detail-dialog"
 import { formatCurrency } from "./utils"
 
-const ITEMS_PER_PAGE = 10
+const ITEMS_PER_PAGE = 9
 
 const DEFAULT_RELATIVE_DT = 30
 
@@ -345,7 +345,7 @@ function TradeList({
 
   if (trades.length === 0) {
     return (
-      <div className="flex h-[380px] items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-[580px] items-center justify-center text-sm text-muted-foreground">
         No trades available
       </div>
     )
@@ -353,7 +353,7 @@ function TradeList({
 
   return (
     <>
-      <ScrollArea className="h-[380px]">
+      <ScrollArea className="h-[680px]">
         {trades.map((trade) => (
           <TradeItem key={trade.tradeId} trade={trade} variant={variant} onClick={onClick} />
         ))}

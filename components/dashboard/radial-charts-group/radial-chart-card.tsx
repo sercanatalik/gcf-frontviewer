@@ -19,14 +19,14 @@ import type { RadialChartDef } from "./data"
 import type { GroupedDataPoint } from "./use-radial-data"
 
 const COLORS = [
-  "hsl(217, 91%, 60%)",
-  "hsl(142, 71%, 45%)",
-  "hsl(262, 83%, 58%)",
-  "hsl(30, 90%, 55%)",
-  "hsl(0, 84%, 60%)",
-  "hsl(45, 85%, 50%)",
-  "hsl(180, 60%, 45%)",
-  "hsl(330, 70%, 55%)",
+  "oklch(0.82 0.10 250)",
+  "oklch(0.72 0.15 255)",
+  "oklch(0.62 0.20 260)",
+  "oklch(0.52 0.22 265)",
+  "oklch(0.42 0.20 270)",
+  "oklch(0.75 0.12 245)",
+  "oklch(0.58 0.18 258)",
+  "oklch(0.48 0.21 268)",
 ]
 
 function formatValue(value: number, formatter: string): string {
@@ -71,13 +71,13 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
       </CardHeader>
       <CardContent className="flex flex-1 items-center px-4 pb-0">
         {isLoading ? (
-          <div className="mx-auto flex aspect-square w-full max-w-[150px] items-center justify-center">
+          <div className="mx-auto flex aspect-square w-full max-w-[250px] items-center justify-center">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : (
           <ChartContainer
             config={chartConfig}
-            className="mx-auto aspect-square w-full max-w-[150px]"
+            className="mx-auto aspect-square w-full max-w-[250px]"
           >
             <RadialBarChart
               data={chartData}
