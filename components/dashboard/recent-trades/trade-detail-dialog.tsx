@@ -349,27 +349,19 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
 
               {/* FX row */}
               <div className="mt-4 grid grid-cols-3 gap-3">
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <Globe className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">FX Spot</p>
-                    <p className="text-sm font-medium tabular-nums">{formatNum(trade.fxSpot, 4)}</p>
+                {([
+                  { label: "FX Spot", value: formatNum(trade.fxSpot, 4), tabular: true },
+                  { label: "FX Pair", value: val(trade.fxPair), tabular: false },
+                  { label: "FX Pair (Funding)", value: val(trade.fxPairFunding), tabular: false },
+                ] as const).map((fx) => (
+                  <div key={fx.label} className="flex items-center gap-3 rounded-lg border p-3">
+                    <Globe className="size-4 text-muted-foreground" />
+                    <div>
+                      <p className="text-[11px] text-muted-foreground">{fx.label}</p>
+                      <p className={cn("text-sm font-medium", fx.tabular && "tabular-nums")}>{fx.value}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <Globe className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">FX Pair</p>
-                    <p className="text-sm font-medium">{val(trade.fxPair)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 rounded-lg border p-3">
-                  <Globe className="size-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-[11px] text-muted-foreground">FX Pair (Funding)</p>
-                    <p className="text-sm font-medium">{val(trade.fxPairFunding)}</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </TabsContent>
 

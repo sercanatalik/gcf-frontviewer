@@ -38,9 +38,9 @@ import { TradeItem } from "./trade-item"
 import { TradeDetailDialog } from "./trade-detail-dialog"
 import { formatCurrency } from "./utils"
 
-const ITEMS_PER_PAGE = 8
+const ITEMS_PER_PAGE = 5
 
-const DEFAULT_RELATIVE_DT = 365
+const DEFAULT_RELATIVE_DT = 30
 
 async function fetchTrades(sort: "recent" | "maturity", filtersParam: string, relativeDt = DEFAULT_RELATIVE_DT): Promise<Trade[]> {
   const url = new URL("/api/tables/recent-trades", window.location.origin)
@@ -126,7 +126,6 @@ export function RecentTrades() {
   const [activeTab, setActiveTab] = useState("recent")
   const [page, setPage] = useState(0)
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
-  const [dialogOpen, setDialogOpen] = useState(false)
 
   const filters = useStore(filtersStore, (s) => s.filters)
   const filtersParam = useMemo(() => serializeFilters(filters), [filters])
@@ -139,6 +138,7 @@ export function RecentTrades() {
   const { data: maturingTrades = [], isLoading: maturingLoading } = useQuery({
     queryKey: ["recent-trades", "maturity", filtersParam],
     queryFn: () => fetchTrades("maturity", filtersParam),
+    enabled: activeTab === "maturing",
   })
 
   const trades = activeTab === "recent" ? recentTrades : maturingTrades
@@ -154,7 +154,6 @@ export function RecentTrades() {
 
   const handleTradeClick = (trade: Trade) => {
     setSelectedTrade(trade)
-    setDialogOpen(true)
   }
 
   return (
@@ -249,38 +248,28 @@ export function RecentTrades() {
               <TabsTrigger value="recent" className="flex-1">Recent</TabsTrigger>
               <TabsTrigger value="maturing" className="flex-1">Maturing</TabsTrigger>
             </TabsList>
-            <TabsContent value="recent">
-              <TradeList
-                trades={paginated}
-                variant="recent"
-                onClick={handleTradeClick}
-                page={page}
-                totalPages={totalPages}
-                isLoading={isLoading}
-                onPrev={() => setPage((p) => Math.max(0, p - 1))}
-                onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              />
-            </TabsContent>
-            <TabsContent value="maturing">
-              <TradeList
-                trades={paginated}
-                variant="maturing"
-                onClick={handleTradeClick}
-                page={page}
-                totalPages={totalPages}
-                isLoading={isLoading}
-                onPrev={() => setPage((p) => Math.max(0, p - 1))}
-                onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-              />
-            </TabsContent>
+            {(["recent", "maturing"] as const).map((tab) => (
+              <TabsContent key={tab} value={tab}>
+                <TradeList
+                  trades={paginated}
+                  variant={tab === "recent" ? "recent" : "maturing"}
+                  onClick={handleTradeClick}
+                  page={page}
+                  totalPages={totalPages}
+                  isLoading={isLoading}
+                  onPrev={() => setPage((p) => Math.max(0, p - 1))}
+                  onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                />
+              </TabsContent>
+            ))}
           </Tabs>
         </CardContent>
       </Card>
 
       <TradeDetailDialog
         trade={selectedTrade}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        open={selectedTrade !== null}
+        onOpenChange={(open) => { if (!open) setSelectedTrade(null) }}
       />
     </>
   )

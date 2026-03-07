@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
+import { DATE_COLUMNS } from "@/lib/columns"
 
 const IDENTIFIER_RE = /^[a-zA-Z_][a-zA-Z0-9_]*$/
 
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const isDateColumn = column.toLowerCase().includes("date")
+    const isDateColumn = DATE_COLUMNS.has(column)
     const expr = isDateColumn
       ? `formatDateTime(${column}, '%Y-%m-%d')`
       : `toString(${column})`

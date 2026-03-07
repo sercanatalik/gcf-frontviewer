@@ -42,7 +42,7 @@ const ALLOWED_COLUMNS = new Set([
   "tenor",
 ])
 
-const DATE_COLUMNS = new Set(["asofDate", "tradeDt", "maturityDt", "startDt", "instrumentMaturityDt"])
+import { DATE_COLUMNS } from "@/lib/columns"
 
 /** Date-relative value resolver (e.g. "Today" → '2026-03-07') */
 function resolveDateValue(val: string): string {

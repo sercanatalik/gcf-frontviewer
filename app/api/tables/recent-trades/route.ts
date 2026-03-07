@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { DATE_COLUMNS } from "@/lib/columns"
 
 const COLUMNS = [
   "tradeId",
@@ -84,13 +85,11 @@ const COLUMNS = [
   "accrualRealised",
 ] as const
 
-const DATE_COLUMNS = new Set([
-  "asofDate",
-  "tradeDt",
-  "startDt",
-  "maturityDt",
-  "instrumentMaturityDt",
-])
+const SELECT_EXPR = COLUMNS.map((col) =>
+  DATE_COLUMNS.has(col)
+    ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
+    : col,
+).join(", ")
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -101,11 +100,6 @@ export async function GET(request: NextRequest) {
   const filtersJson = searchParams.get("filters") || ""
 
   try {
-    const selectExpr = COLUMNS.map((col) =>
-      DATE_COLUMNS.has(col)
-        ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
-        : col,
-    ).join(", ")
 
     // Build WHERE from filters
     const { clauses, params, hasAsofDate } = filtersJson
@@ -126,7 +120,7 @@ export async function GET(request: NextRequest) {
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
 
     const query = `
-      SELECT ${selectExpr}
+      SELECT ${SELECT_EXPR}
       FROM gcf_risk_mv
       ${whereStr}
       ORDER BY ${sort}
