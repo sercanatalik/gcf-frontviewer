@@ -5,11 +5,11 @@ export const FIELD_OPTIONS = [
 ]
 
 export const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
+  "hsl(217, 91%, 60%)",
+  "hsl(221, 83%, 53%)",
+  "hsl(224, 76%, 48%)",
+  "hsl(226, 71%, 40%)",
+  "hsl(217, 60%, 68%)",
 ]
 
 export function sanitizeKey(key: string): string {
@@ -17,10 +17,12 @@ export function sanitizeKey(key: string): string {
 }
 
 export function formatCurrency(value: number): string {
-  if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(0)}K`
-  return `$${value.toFixed(0)}`
+  const sign = value < 0 ? "-" : ""
+  const abs = Math.abs(value)
+  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
+  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
+  return `${sign}$${abs.toFixed(0)}`
 }
 
 export function processHistoricalData(
@@ -142,10 +144,6 @@ export function getChartGroups(
     }
   }
   return Array.from(keys)
-}
-
-export function getGroupColor(index: number): string {
-  return CHART_COLORS[index % CHART_COLORS.length]!
 }
 
 function fmtDate(d: string): string {

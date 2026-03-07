@@ -1,49 +1,81 @@
 "use client"
 
-import { formatCurrency, getGroupColor } from "./utils"
+import { formatCurrency, CHART_COLORS } from "./utils"
+
+function ColorSquare({ color }: { color: string }) {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" style={{ flexShrink: 0 }}>
+      <rect width="12" height="12" rx="2" fill={color} />
+    </svg>
+  )
+}
 
 interface PayloadItem {
   name: string
   value: number
-  color: string
+  dataKey: string
+  color?: string
+  fill?: string
+  payload?: Record<string, unknown>
 }
 
-interface ChartTooltipProps {
+interface CustomTooltipProps {
   active?: boolean
   payload?: PayloadItem[]
   label?: string
+  groups: string[]
 }
 
-export function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
+export function CustomTooltip({ active, payload, label, groups }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
 
-  const total = payload.reduce((sum, p) => sum + (p.value || 0), 0)
+  const total = payload.reduce((sum, p) => sum + (Number(p.value) || 0), 0)
 
   return (
-    <div className="rounded-xl border border-border/50 bg-card/95 px-4 py-3 shadow-xl backdrop-blur-md">
-      <p className="mb-2 text-xs font-medium text-muted-foreground">{label}</p>
-      <div className="space-y-1.5">
-        {payload.map((entry, i) => (
-          <div key={entry.name} className="flex items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <span
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: entry.color || getGroupColor(i) }}
-              />
-              <span className="text-xs text-muted-foreground">{entry.name}</span>
+    <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-xs shadow-lg">
+      <p className="mb-1.5 font-medium">{label}</p>
+      <div className="space-y-1">
+        {payload.map((entry) => {
+          const idx = groups.indexOf(entry.dataKey)
+          const color = CHART_COLORS[idx % CHART_COLORS.length]!
+          return (
+            <div key={entry.dataKey} className="flex items-center justify-between gap-8">
+              <div className="flex items-center gap-2">
+                <ColorSquare color={color} />
+                <span className="text-muted-foreground">{entry.name}</span>
+              </div>
+              <span className="font-mono font-medium tabular-nums">
+                {formatCurrency(Number(entry.value))}
+              </span>
             </div>
-            <span className="text-xs font-semibold tabular-nums">
-              {formatCurrency(entry.value)}
-            </span>
-          </div>
-        ))}
+          )
+        })}
       </div>
       {payload.length > 1 && (
-        <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-2">
-          <span className="text-xs font-medium text-muted-foreground">Total</span>
-          <span className="text-xs font-bold tabular-nums">{formatCurrency(total)}</span>
+        <div className="mt-1.5 flex items-center justify-between border-t border-border pt-1.5 gap-8">
+          <span className="font-medium text-muted-foreground">Total</span>
+          <span className="font-mono font-semibold tabular-nums">
+            {formatCurrency(total)}
+          </span>
         </div>
       )}
+    </div>
+  )
+}
+
+interface CustomLegendProps {
+  groups: string[]
+}
+
+export function CustomLegend({ groups }: CustomLegendProps) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-x-20 gap-y-2 pt-4 text-xs">
+      {groups.map((group, i) => (
+        <div key={group} className="flex items-center gap-2">
+          <ColorSquare color={CHART_COLORS[i % CHART_COLORS.length]!} />
+          <span className="text-muted-foreground">{group}</span>
+        </div>
+      ))}
     </div>
   )
 }
