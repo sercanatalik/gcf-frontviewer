@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-store"
 import { useMemo } from "react"
 import { filtersStore } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
+import { basePath } from "@/lib/utils"
 import type { RadialChartDef } from "./data"
 
 export interface GroupedDataPoint {
@@ -23,7 +24,7 @@ async function fetchGroupedData(
   if (chart.measure.weightField) params.set("weightField", chart.measure.weightField)
   if (filtersParam) params.set("filters", filtersParam)
 
-  const res = await fetch(`/api/tables/grouped-stats?${params}`)
+  const res = await fetch(`${basePath}/api/tables/grouped-stats?${params}`)
   if (!res.ok) throw new Error("Failed to fetch grouped data")
   return res.json()
 }

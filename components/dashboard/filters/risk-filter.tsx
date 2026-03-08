@@ -10,7 +10,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
+import { cn, basePath } from "@/lib/utils"
 import { ListFilter, Trash2 } from "lucide-react"
 import { nanoid } from "nanoid"
 import * as React from "react"
@@ -33,7 +33,7 @@ interface RiskFilterProps {
 }
 
 async function fetchDistinctValues(table: string, column: string): Promise<string[]> {
-  const res = await fetch(`/api/tables/distinct?table=${table}&column=${column}`)
+  const res = await fetch(`${basePath}/api/tables/distinct?table=${table}&column=${column}`)
   if (!res.ok) return []
   return res.json()
 }
@@ -78,7 +78,7 @@ function useDefaultAsofDate(tableName: string) {
   const { data: latestDate } = useQuery({
     queryKey: ["latest-asofDate", tableName],
     queryFn: async () => {
-      const res = await fetch(`/api/tables/distinct?table=${tableName}&column=asofDate`)
+      const res = await fetch(`${basePath}/api/tables/distinct?table=${tableName}&column=asofDate`)
       if (!res.ok) return null
       const values: string[] = await res.json()
       return values.length > 0 ? values[values.length - 1]! : null

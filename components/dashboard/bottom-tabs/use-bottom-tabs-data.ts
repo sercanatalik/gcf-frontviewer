@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-store"
 import { useMemo } from "react"
 import { filtersStore } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
+import { basePath } from "@/lib/utils"
 import type { TabDef } from "./data"
 
 export interface TabRow {
@@ -25,7 +26,7 @@ async function fetchTabData(
   })
   if (filtersParam) params.set("filters", filtersParam)
 
-  const res = await fetch(`/api/tables/tab-summary?${params}`)
+  const res = await fetch(`${basePath}/api/tables/tab-summary?${params}`)
   if (!res.ok) throw new Error("Failed to fetch tab data")
   return res.json()
 }

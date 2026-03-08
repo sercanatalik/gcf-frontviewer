@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-store"
 import { useMemo } from "react"
 import { filtersStore } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
+import { basePath } from "@/lib/utils"
 import type { KpiMeasure, KpiStatData } from "./types"
 
 async function fetchKpiSummary(
@@ -23,7 +24,7 @@ async function fetchKpiSummary(
   })
   if (filtersParam) params.set("filters", filtersParam)
 
-  const res = await fetch(`/api/tables/kpi-summary?${params}`)
+  const res = await fetch(`${basePath}/api/tables/kpi-summary?${params}`)
   if (!res.ok) throw new Error("Failed to fetch KPI data")
   return res.json()
 }

@@ -30,7 +30,7 @@ import {
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useStore } from "@tanstack/react-store"
-import { cn } from "@/lib/utils"
+import { cn, basePath } from "@/lib/utils"
 import { filtersStore } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
 import type { Trade } from "./types"
@@ -43,7 +43,7 @@ const ITEMS_PER_PAGE = 9
 const DEFAULT_RELATIVE_DT = 30
 
 async function fetchTrades(sort: "recent" | "maturity", filtersParam: string, relativeDt = DEFAULT_RELATIVE_DT): Promise<Trade[]> {
-  const url = new URL("/api/tables/recent-trades", window.location.origin)
+  const url = new URL(`${basePath}/api/tables/recent-trades`, window.location.origin)
   url.searchParams.set("limit", "50")
   url.searchParams.set("sort", sort)
   url.searchParams.set("relativeDt", String(relativeDt))

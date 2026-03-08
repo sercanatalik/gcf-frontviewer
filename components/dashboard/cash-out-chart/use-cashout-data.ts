@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-store"
 import { useMemo } from "react"
 import { filtersStore } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
+import { basePath } from "@/lib/utils"
 
 interface CashoutResponse {
   data: Record<string, unknown>[]
@@ -23,7 +24,7 @@ async function fetchData(
   if (groupBy) params.set("groupBy", groupBy)
   if (filtersParam) params.set("filters", filtersParam)
 
-  const res = await fetch(`/api/tables/${endpoint}?${params}`)
+  const res = await fetch(`${basePath}/api/tables/${endpoint}?${params}`)
   if (!res.ok) throw new Error(`Failed to fetch ${endpoint} data`)
   return res.json()
 }

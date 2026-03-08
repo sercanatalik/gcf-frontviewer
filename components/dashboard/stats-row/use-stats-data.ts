@@ -3,6 +3,7 @@ import { useStore } from "@tanstack/react-store"
 import { useMemo } from "react"
 import { filtersStore } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
+import { basePath } from "@/lib/utils"
 import type { StatMeasure, StatData } from "./types"
 
 async function fetchStatsSummary(
@@ -22,7 +23,7 @@ async function fetchStatsSummary(
   })
   if (filtersParam) params.set("filters", filtersParam)
 
-  const res = await fetch(`/api/tables/stats-summary?${params}`)
+  const res = await fetch(`${basePath}/api/tables/stats-summary?${params}`)
   if (!res.ok) throw new Error("Failed to fetch stats data")
   return res.json()
 }
