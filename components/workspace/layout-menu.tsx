@@ -7,6 +7,7 @@ import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace
 import {
   LayoutGrid,
   LayoutDashboard,
+  ArrowRightLeft,
   Table,
   ShieldCheck,
   Users,
@@ -173,6 +174,12 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
             <Link href="/dashboard">
               <LayoutDashboard className="size-4 text-indigo-500" />
               Dashboard
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/trades">
+              <ArrowRightLeft className="size-4 text-emerald-500" />
+              Trades
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
