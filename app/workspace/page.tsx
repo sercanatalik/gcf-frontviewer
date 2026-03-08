@@ -5,7 +5,6 @@ import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace
 import { DashboardHeader } from "@/components/dashboard/header"
 import { FilterBar } from "@/components/dashboard/filter-bar"
 import { LoadingScreen } from "@/components/workspace/loading-screen"
-import { LayoutMenu } from "@/components/workspace/layout-menu"
 import { usePerspective } from "@/hooks/use-perspective"
 
 export default function WorkspacePage() {
@@ -17,10 +16,7 @@ export default function WorkspacePage() {
       <div className="absolute inset-0 flex flex-col bg-muted">
         <div className="flex shrink-0 items-start justify-between border-b bg-background px-5 py-4">
           <DashboardHeader />
-          <div className="flex items-center gap-2">
-            <LayoutMenu workspaceRef={workspaceRef} ready={ready} />
-            <FilterBar />
-          </div>
+          <FilterBar workspaceRef={workspaceRef} ready={ready} />
         </div>
 
         {!ready && <LoadingScreen progress={loading} />}

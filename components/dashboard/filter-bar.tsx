@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace"
 import { RiskFilter } from "./filters/risk-filter"
 import {
   filterTypes,
@@ -10,13 +11,15 @@ import {
 } from "./filters/filter-config"
 import { filtersActions } from "@/lib/store/filters"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { NavMenu } from "@/components/nav-menu"
+import { LayoutMenu } from "@/components/workspace/layout-menu"
 
 interface FilterBarProps {
   tableName?: string
+  workspaceRef?: React.RefObject<HTMLPerspectiveWorkspaceElement | null>
+  ready?: boolean
 }
 
-export function FilterBar({ tableName = "gcf_risk_mv" }: FilterBarProps) {
+export function FilterBar({ tableName = "gcf_risk_mv", workspaceRef, ready }: FilterBarProps) {
   useEffect(() => {
     filtersActions.setActiveTable(tableName)
   }, [tableName])
@@ -30,7 +33,7 @@ export function FilterBar({ tableName = "gcf_risk_mv" }: FilterBarProps) {
         operatorConfig={operatorConfig}
       />
       <ThemeToggle />
-      <NavMenu />
+      <LayoutMenu workspaceRef={workspaceRef} ready={ready} />
     </div>
   )
 }
