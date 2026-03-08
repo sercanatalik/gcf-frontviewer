@@ -1,11 +1,15 @@
-import { Terminal, CheckCircle2, Circle, Loader2, AlertCircle } from "lucide-react"
+"use client"
+
+import { motion, AnimatePresence } from "motion/react"
+import { Check, Loader2, AlertCircle } from "lucide-react"
+import { ShinyText } from "@/components/ui/shiny-text"
 import type { LoadingProgress, LoadingPhase } from "@/lib/types"
 
 const PHASES: { key: LoadingPhase; label: string }[] = [
-  { key: "init-wasm", label: "Initializing WASM runtime" },
-  { key: "fetch-schemas", label: "Fetching table schemas" },
-  { key: "load-tables", label: "Loading table data" },
-  { key: "restore-layout", label: "Restoring workspace layout" },
+  { key: "init-wasm", label: "Initializing runtime" },
+  { key: "fetch-schemas", label: "Fetching schemas" },
+  { key: "load-tables", label: "Loading data" },
+  { key: "restore-layout", label: "Restoring layout" },
 ]
 
 const PHASE_ORDER: LoadingPhase[] = [
@@ -38,94 +42,118 @@ export function LoadingScreen({ progress }: LoadingScreenProps) {
       : 0
 
   return (
-    <div
-      className="flex flex-1 items-center justify-center"
-      style={{ backgroundColor: "#1e1e1e" }}
-    >
-      <div className="w-full max-w-md px-6">
-        <div
-          className="mb-8 flex items-center gap-2.5"
-          style={{ color: "#33ff33" }}
-        >
-          <Terminal size={20} strokeWidth={2.5} />
-          <span className="font-mono text-sm font-semibold tracking-wide">
+    <div className="flex flex-1 items-center justify-center bg-background">
+      <div className="w-full max-w-sm px-6">
+        <div className="mb-8 text-center">
+          <ShinyText className="text-sm font-semibold tracking-widest uppercase" speed={4}>
             GCF Workspace
-          </span>
+          </ShinyText>
         </div>
 
-        <div className="space-y-3">
-          {PHASES.map(({ key, label }) => {
+        <div className="space-y-1">
+          {PHASES.map(({ key, label }, i) => {
             const status = getPhaseStatus(key, progress.phase)
             return (
-              <div
+              <motion.div
                 key={key}
-                className="flex items-center gap-3 font-mono text-xs"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.08, duration: 0.3 }}
+                className="flex items-center gap-3 rounded-md px-3 py-2"
               >
-                {status === "done" && (
-                  <CheckCircle2 size={14} style={{ color: "#33ff33" }} />
-                )}
-                {status === "active" && (
-                  <Loader2
-                    size={14}
-                    className="animate-spin"
-                    style={{ color: "#33ff33" }}
-                  />
-                )}
-                {status === "pending" && (
-                  <Circle size={14} style={{ color: "#555" }} />
-                )}
+                <div className="flex h-5 w-5 shrink-0 items-center justify-center">
+                  <AnimatePresence mode="wait">
+                    {status === "done" && (
+                      <motion.div
+                        key="done"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                      >
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-chart-3">
+                          <Check size={12} className="text-primary-foreground" strokeWidth={3} />
+                        </div>
+                      </motion.div>
+                    )}
+                    {status === "active" && (
+                      <motion.div
+                        key="active"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <Loader2
+                          size={16}
+                          className="animate-spin text-chart-1"
+                        />
+                      </motion.div>
+                    )}
+                    {status === "pending" && (
+                      <motion.div
+                        key="pending"
+                        className="h-1.5 w-1.5 rounded-full bg-border"
+                      />
+                    )}
+                  </AnimatePresence>
+                </div>
                 <span
-                  style={{
-                    color: status === "pending" ? "#555" : "#33ff33",
-                  }}
+                  className={`text-xs font-medium transition-colors duration-300 ${
+                    status === "done"
+                      ? "text-foreground"
+                      : status === "active"
+                        ? "text-foreground"
+                        : "text-muted-foreground/40"
+                  }`}
                 >
                   {label}
                   {key === "load-tables" &&
                     status === "active" &&
                     progress.currentTable && (
-                      <span style={{ color: "#22aa22" }}>
-                        {" "}
-                        ({progress.tablesLoaded}/{progress.tablesTotal}){" "}
-                        {progress.currentTable}
+                      <span className="ml-1.5 text-muted-foreground">
+                        {progress.tablesLoaded}/{progress.tablesTotal}
                       </span>
                     )}
                 </span>
-              </div>
+              </motion.div>
             )
           })}
         </div>
 
-        {progress.phase === "load-tables" && progress.tablesTotal > 0 && (
-          <div className="mt-5">
-            <div
-              className="h-1.5 overflow-hidden rounded-full"
-              style={{ backgroundColor: "#333" }}
+        <AnimatePresence>
+          {progress.phase === "load-tables" && progress.tablesTotal > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-4 px-3"
             >
-              <div
-                className="h-full rounded-full transition-all duration-300"
-                style={{
-                  backgroundColor: "#33ff33",
-                  width: `${progressPct}%`,
-                }}
-              />
-            </div>
-            <div
-              className="mt-1.5 text-right font-mono text-[10px]"
-              style={{ color: "#555" }}
-            >
-              {progressPct}%
-            </div>
-          </div>
-        )}
+              <div className="h-1 overflow-hidden rounded-full bg-secondary">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, var(--chart-1), var(--chart-3), var(--chart-5))",
+                  }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPct}%` }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
+              </div>
+              <div className="mt-1.5 text-right text-[10px] text-muted-foreground">
+                {progressPct}%
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {progress.error && (
-          <div
-            className="mt-5 flex items-start gap-2 font-mono text-xs"
-            style={{ color: "#ff4444" }}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-5 flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive"
           >
             <AlertCircle size={14} className="mt-0.5 shrink-0" />
             <span>{progress.error}</span>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>
