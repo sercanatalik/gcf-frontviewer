@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   LayoutDashboard,
   ArrowRightLeft,
+  TrendingUp,
   Table,
   ShieldCheck,
   Users,
@@ -180,6 +181,12 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
             <Link href="/trades">
               <ArrowRightLeft className="size-4 text-emerald-500" />
               Trades
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/trends">
+              <TrendingUp className="size-4 text-amber-500" />
+              Trends
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
