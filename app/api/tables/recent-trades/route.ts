@@ -1,95 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { DATE_COLUMNS } from "@/lib/columns"
-
-const COLUMNS = [
-  "tradeId",
-  "asofDate",
-  "tradeStatus",
-  "side",
-
-  "productType",
-  "productSubType",
-  "assetClass",
-
-  "tradeDt",
-  "startDt",
-  "maturityDt",
-  "maturityIsOpen",
-
-  "fundingAmount",
-  "fundingAmountLCY",
-  "collateralAmount",
-  "collateralAmountLCY",
-  "financingExposure",
-  "cashOut",
-
-  "fundingMargin",
-  "fixedRate",
-  "fundingType",
-  "fundingCurrency",
-  "fundingFixingLabel",
-  "haircut",
-
-  "collateralDesc",
-  "collateralType",
-  "collatCurrency",
-  "collatName",
-  "instrumentType",
-  "coupon",
-  "couponType",
-  "instrumentCcy",
-  "instrumentMaturityDt",
-
-  "isinId",
-  "bbgId",
-  "ticker",
-
-  "counterParty",
-  "counterpartyParentName",
-  "cpType",
-  "cpRatingMoodys",
-  "cpRatingSnp",
-  "cpCrr",
-  "counterpartyLei",
-  "countryOfRisk",
-  "domicileCountry",
-
-  "issuerName",
-
-  "hmsDesk",
-  "hmsBook",
-  "hmsPortfolio",
-  "hmsSL1",
-  "hmsSL2",
-  "primaryTrader",
-  "region",
-  "subRegion",
-  "tradingLocation",
-  "bookCategory",
-  "leName",
-
-  "fxSpot",
-  "fxPair",
-  "fxPairFunding",
-
-  "dtm",
-  "age",
-  "tenor",
-  "realisedMarginCall",
-  "expectedMarginCall",
-
-  "accrualDaily",
-  "accrualProjected",
-  "accrualRealised",
-] as const
-
-const SELECT_EXPR = COLUMNS.map((col) =>
-  DATE_COLUMNS.has(col)
-    ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
-    : col,
-).join(", ")
+import { TRADE_SELECT_EXPR } from "@/lib/columns"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -120,7 +32,7 @@ export async function GET(request: NextRequest) {
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
 
     const query = `
-      SELECT ${SELECT_EXPR}
+      SELECT ${TRADE_SELECT_EXPR}
       FROM gcf_risk_mv
       ${whereStr}
       ORDER BY ${sort}

@@ -1,89 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { DATE_COLUMNS } from "@/lib/columns"
-
-const COLUMNS = [
-  "tradeId",
-  "asofDate",
-  "tradeStatus",
-  "side",
-
-  "productType",
-  "productSubType",
-  "assetClass",
-
-  "tradeDt",
-  "startDt",
-  "maturityDt",
-  "maturityIsOpen",
-
-  "fundingAmount",
-  "fundingAmountLCY",
-  "collateralAmount",
-  "collateralAmountLCY",
-  "financingExposure",
-  "cashOut",
-
-  "fundingMargin",
-  "fixedRate",
-  "fundingType",
-  "fundingCurrency",
-  "fundingFixingLabel",
-  "haircut",
-
-  "collateralDesc",
-  "collateralType",
-  "collatCurrency",
-  "collatName",
-  "instrumentType",
-  "coupon",
-  "couponType",
-  "instrumentCcy",
-  "instrumentMaturityDt",
-
-  "isinId",
-  "bbgId",
-  "ticker",
-
-  "counterParty",
-  "counterpartyParentName",
-  "cpType",
-  "cpRatingMoodys",
-  "cpRatingSnp",
-  "cpCrr",
-  "counterpartyLei",
-  "countryOfRisk",
-  "domicileCountry",
-
-  "issuerName",
-
-  "hmsDesk",
-  "hmsBook",
-  "hmsPortfolio",
-  "hmsSL1",
-  "hmsSL2",
-  "primaryTrader",
-  "region",
-  "subRegion",
-  "tradingLocation",
-  "bookCategory",
-  "leName",
-
-  "fxSpot",
-  "fxPair",
-  "fxPairFunding",
-
-  "dtm",
-  "age",
-  "tenor",
-  "realisedMarginCall",
-  "expectedMarginCall",
-
-  "accrualDaily",
-  "accrualProjected",
-  "accrualRealised",
-] as const
+import { TRADE_SELECT_EXPR } from "@/lib/columns"
 
 const SEARCH_COLUMNS = [
   "counterParty",
@@ -108,12 +26,6 @@ const SORTABLE_COLUMNS: Record<string, string> = {
   fundingMargin: "fundingMargin",
   cashOut: "cashOut",
 }
-
-const SELECT_EXPR = COLUMNS.map((col) =>
-  DATE_COLUMNS.has(col)
-    ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
-    : col,
-).join(", ")
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -157,18 +69,19 @@ export async function GET(request: NextRequest) {
 
     // Data query
     const dataQuery = `
-      SELECT ${SELECT_EXPR}
+      SELECT ${TRADE_SELECT_EXPR}
       FROM gcf_risk_mv
       ${whereStr}
       ORDER BY ${sortCol} ${sortDir}
-      LIMIT ${limit}
-      OFFSET ${offset}
+      LIMIT {p_limit:UInt32}
+      OFFSET {p_offset:UInt32}
     `
 
     const client = getClickHouseClient()
+    const dataParams = { ...params, p_limit: limit, p_offset: offset }
     const [countResult, dataResult] = await Promise.all([
       client.query({ query: countQuery, query_params: params, format: "JSONEachRow" }),
-      client.query({ query: dataQuery, query_params: params, format: "JSONEachRow" }),
+      client.query({ query: dataQuery, query_params: dataParams, format: "JSONEachRow" }),
     ])
 
     const [countRows, rows] = await Promise.all([countResult.json(), dataResult.json()])

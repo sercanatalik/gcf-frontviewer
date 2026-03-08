@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import type { TrendCardDef } from "./data"
+import type { TrendCardDef, ChartType } from "./data"
 import { useTrendData } from "./use-trend-data"
 import {
   TREND_COLORS,
@@ -58,7 +58,7 @@ function TrendTooltip({
     <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-xs shadow-lg">
       <p className="mb-1.5 font-medium">{label}</p>
       <div className="space-y-1">
-        {payload.map((entry, i) => {
+        {payload.map((entry) => {
           const idx = groups.indexOf(entry.dataKey)
           const color = idx >= 0 ? TREND_COLORS[idx % TREND_COLORS.length] : entry.color
           return (
@@ -106,7 +106,6 @@ export function TrendCard({ card }: TrendCardProps) {
     return processSimpleData(data.data)
   }, [data, isGrouped])
 
-  // Compute summary: latest value and trend
   const summary = useMemo(() => {
     if (chartData.length < 2) return null
     if (isGrouped) {
@@ -176,41 +175,14 @@ export function TrendCard({ card }: TrendCardProps) {
           </div>
         ) : (
           <div className="h-[200px]">
-            {card.chartType === "area" && (
-              <SimpleAreaChart
-                data={chartData as { date: string; value: number }[]}
-                formatter={card.formatter}
-              />
-            )}
-            {card.chartType === "line" && (
-              <SimpleLineChart
-                data={chartData as { date: string; value: number }[]}
-                formatter={card.formatter}
-              />
-            )}
-            {card.chartType === "bar" && (
-              <SimpleBarChart
-                data={chartData as { date: string; value: number }[]}
-                formatter={card.formatter}
-              />
-            )}
-            {card.chartType === "stackedArea" && (
-              <StackedAreaChart
-                data={chartData}
-                groups={groups}
-                formatter={card.formatter}
-              />
-            )}
-            {card.chartType === "stackedBar" && (
-              <StackedBarChartComponent
-                data={chartData}
-                groups={groups}
-                formatter={card.formatter}
-              />
-            )}
+            <TrendChart
+              type={card.chartType}
+              data={chartData}
+              groups={groups}
+              formatter={card.formatter}
+            />
           </div>
         )}
-        {/* Legend for grouped charts */}
         {isGrouped && groups.length > 0 && !isLoading && chartData.length > 0 && (
           <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 pt-2 text-[10px] text-muted-foreground">
             {groups.map((g, i) => (
@@ -229,541 +201,242 @@ export function TrendCard({ card }: TrendCardProps) {
   )
 }
 
-function SimpleAreaChart({
-  data,
-  formatter,
-}: {
-  data: { date: string; value: number }[]
-  formatter: string
-}) {
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-        <defs>
-          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={TREND_COLORS[0]} stopOpacity={0.3} />
-            <stop offset="95%" stopColor={TREND_COLORS[0]} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid vertical={false} className="stroke-border/40" />
-        <XAxis
-          dataKey="date"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={40}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <YAxis
-          tickFormatter={(v) => formatValue(v, formatter)}
-          tickLine={false}
-          axisLine={false}
-          width={55}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <Tooltip
-          content={
-            <TrendTooltip formatter={formatter} groups={["value"]} />
-          }
-          cursor={{ stroke: "var(--muted-foreground)", strokeWidth: 1, strokeDasharray: "4 4" }}
-        />
-        <Area
-          type="monotone"
-          dataKey="value"
-          stroke={TREND_COLORS[0]}
-          strokeWidth={2}
-          fill="url(#areaGrad)"
-          dot={false}
-          activeDot={{ r: 3, strokeWidth: 0 }}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  )
-}
+// ---------------------------------------------------------------------------
+// Unified chart component
+// ---------------------------------------------------------------------------
 
-function SimpleLineChart({
-  data,
-  formatter,
-}: {
-  data: { date: string; value: number }[]
-  formatter: string
-}) {
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-        <CartesianGrid vertical={false} className="stroke-border/40" />
-        <XAxis
-          dataKey="date"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={40}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <YAxis
-          tickFormatter={(v) => formatValue(v, formatter)}
-          tickLine={false}
-          axisLine={false}
-          width={55}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <Tooltip
-          content={
-            <TrendTooltip formatter={formatter} groups={["value"]} />
-          }
-          cursor={{ stroke: "var(--muted-foreground)", strokeWidth: 1, strokeDasharray: "4 4" }}
-        />
-        <Line
-          type="monotone"
-          dataKey="value"
-          stroke={TREND_COLORS[0]}
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 3, strokeWidth: 0 }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-}
+const CHART_MARGIN = { top: 5, right: 5, left: 0, bottom: 0 }
+const LINE_CURSOR = { stroke: "var(--muted-foreground)", strokeWidth: 1, strokeDasharray: "4 4" }
+const BAR_CURSOR = { fill: "var(--muted)", opacity: 0.5 }
 
-function SimpleBarChart({
-  data,
-  formatter,
-}: {
-  data: { date: string; value: number }[]
-  formatter: string
-}) {
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-        <CartesianGrid vertical={false} className="stroke-border/40" />
-        <XAxis
-          dataKey="date"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={40}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <YAxis
-          tickFormatter={(v) => formatValue(v, formatter)}
-          tickLine={false}
-          axisLine={false}
-          width={55}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <Tooltip
-          content={
-            <TrendTooltip formatter={formatter} groups={["value"]} />
-          }
-          cursor={{ fill: "var(--muted)", opacity: 0.5 }}
-        />
-        <Bar
-          dataKey="value"
-          fill={TREND_COLORS[0]}
-          radius={[3, 3, 0, 0]}
-          maxBarSize={24}
-        />
-      </BarChart>
-    </ResponsiveContainer>
-  )
-}
-
-function StackedAreaChart({
+function TrendChart({
+  type,
   data,
   groups,
   formatter,
 }: {
+  type: ChartType
   data: Record<string, unknown>[]
   groups: string[]
   formatter: string
 }) {
-  return (
-    <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-        <defs>
-          {groups.map((g, i) => (
-            <linearGradient key={g} id={`grad-${g}`} x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="5%"
-                stopColor={TREND_COLORS[i % TREND_COLORS.length]}
-                stopOpacity={0.4}
-              />
-              <stop
-                offset="95%"
-                stopColor={TREND_COLORS[i % TREND_COLORS.length]}
-                stopOpacity={0.05}
-              />
+  const id = useId()
+
+  const sharedAxis = (
+    <>
+      <CartesianGrid vertical={false} className="stroke-border/40" />
+      <XAxis
+        dataKey="date"
+        tickLine={false}
+        axisLine={false}
+        tickMargin={8}
+        minTickGap={40}
+        className="text-[10px] fill-muted-foreground"
+      />
+      <YAxis
+        tickFormatter={(v) => formatValue(v, formatter)}
+        tickLine={false}
+        axisLine={false}
+        width={55}
+        className="text-[10px] fill-muted-foreground"
+      />
+    </>
+  )
+
+  if (type === "area") {
+    const gradId = `area-${id}`
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={CHART_MARGIN}>
+          <defs>
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={TREND_COLORS[0]} stopOpacity={0.3} />
+              <stop offset="95%" stopColor={TREND_COLORS[0]} stopOpacity={0} />
             </linearGradient>
-          ))}
-        </defs>
-        <CartesianGrid vertical={false} className="stroke-border/40" />
-        <XAxis
-          dataKey="date"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={40}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <YAxis
-          tickFormatter={(v) => formatValue(v, formatter)}
-          tickLine={false}
-          axisLine={false}
-          width={55}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <Tooltip
-          content={<TrendTooltip formatter={formatter} groups={groups} />}
-          cursor={{ stroke: "var(--muted-foreground)", strokeWidth: 1, strokeDasharray: "4 4" }}
-        />
-        {groups.map((g, i) => (
-          <Area
-            key={g}
-            type="monotone"
-            dataKey={g}
-            stackId="1"
-            stroke={TREND_COLORS[i % TREND_COLORS.length]}
-            strokeWidth={1.5}
-            fill={`url(#grad-${g})`}
-            dot={false}
-            activeDot={{ r: 3, strokeWidth: 0 }}
-          />
-        ))}
-      </AreaChart>
-    </ResponsiveContainer>
-  )
-}
+          </defs>
+          {sharedAxis}
+          <Tooltip content={<TrendTooltip formatter={formatter} groups={["value"]} />} cursor={LINE_CURSOR} />
+          <Area type="monotone" dataKey="value" stroke={TREND_COLORS[0]} strokeWidth={2} fill={`url(#${gradId})`} dot={false} activeDot={{ r: 3, strokeWidth: 0 }} />
+        </AreaChart>
+      </ResponsiveContainer>
+    )
+  }
 
-function StackedBarChartComponent({
-  data,
-  groups,
-  formatter,
-}: {
-  data: Record<string, unknown>[]
-  groups: string[]
-  formatter: string
-}) {
+  if (type === "line") {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={CHART_MARGIN}>
+          {sharedAxis}
+          <Tooltip content={<TrendTooltip formatter={formatter} groups={["value"]} />} cursor={LINE_CURSOR} />
+          <Line type="monotone" dataKey="value" stroke={TREND_COLORS[0]} strokeWidth={2} dot={false} activeDot={{ r: 3, strokeWidth: 0 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  if (type === "bar") {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={CHART_MARGIN}>
+          {sharedAxis}
+          <Tooltip content={<TrendTooltip formatter={formatter} groups={["value"]} />} cursor={BAR_CURSOR} />
+          <Bar dataKey="value" fill={TREND_COLORS[0]} radius={[3, 3, 0, 0]} maxBarSize={24} />
+        </BarChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  if (type === "stackedArea") {
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={CHART_MARGIN}>
+          <defs>
+            {groups.map((g, i) => (
+              <linearGradient key={g} id={`grad-${id}-${g}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={TREND_COLORS[i % TREND_COLORS.length]} stopOpacity={0.4} />
+                <stop offset="95%" stopColor={TREND_COLORS[i % TREND_COLORS.length]} stopOpacity={0.05} />
+              </linearGradient>
+            ))}
+          </defs>
+          {sharedAxis}
+          <Tooltip content={<TrendTooltip formatter={formatter} groups={groups} />} cursor={LINE_CURSOR} />
+          {groups.map((g, i) => (
+            <Area key={g} type="monotone" dataKey={g} stackId="1" stroke={TREND_COLORS[i % TREND_COLORS.length]} strokeWidth={1.5} fill={`url(#grad-${id}-${g})`} dot={false} activeDot={{ r: 3, strokeWidth: 0 }} />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
+    )
+  }
+
+  // stackedBar
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
-        <CartesianGrid vertical={false} className="stroke-border/40" />
-        <XAxis
-          dataKey="date"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          minTickGap={40}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <YAxis
-          tickFormatter={(v) => formatValue(v, formatter)}
-          tickLine={false}
-          axisLine={false}
-          width={55}
-          className="text-[10px] fill-muted-foreground"
-        />
-        <Tooltip
-          content={<TrendTooltip formatter={formatter} groups={groups} />}
-          cursor={{ fill: "var(--muted)", opacity: 0.5 }}
-        />
+      <BarChart data={data} margin={CHART_MARGIN}>
+        {sharedAxis}
+        <Tooltip content={<TrendTooltip formatter={formatter} groups={groups} />} cursor={BAR_CURSOR} />
         {groups.map((g, i) => (
-          <Bar
-            key={g}
-            dataKey={g}
-            stackId="stack"
-            fill={TREND_COLORS[i % TREND_COLORS.length]}
-            radius={
-              i === groups.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]
-            }
-            maxBarSize={24}
-          />
+          <Bar key={g} dataKey={g} stackId="stack" fill={TREND_COLORS[i % TREND_COLORS.length]} radius={i === groups.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]} maxBarSize={24} />
         ))}
       </BarChart>
     </ResponsiveContainer>
   )
 }
 
-// Deterministic heights so SSR/CSR match (no Math.random)
+// ---------------------------------------------------------------------------
+// Chart skeletons
+// ---------------------------------------------------------------------------
+
 const AREA_POINTS = [40, 55, 48, 65, 58, 72, 60, 50, 68, 75, 62, 45, 58, 70, 52, 63, 48, 55, 67, 72]
 const BAR_HEIGHTS = [45, 62, 38, 70, 55, 48, 65, 52, 58, 42]
 const STACKED_BAR_SPLITS = [
-  [20, 15, 10],
-  [25, 20, 17],
-  [15, 12, 11],
-  [30, 18, 22],
-  [22, 15, 18],
-  [18, 14, 16],
-  [28, 17, 20],
-  [20, 16, 16],
-  [24, 14, 20],
-  [16, 12, 14],
+  [20, 15, 10], [25, 20, 17], [15, 12, 11], [30, 18, 22], [22, 15, 18],
+  [18, 14, 16], [28, 17, 20], [20, 16, 16], [24, 14, 20], [16, 12, 14],
 ]
 
-function ChartSkeleton({ type }: { type: string }) {
-  const id = useId()
-
-  const shimmer = (
-    <defs>
-      <linearGradient id={`shimmer-${id}`} x1="0" y1="0" x2="1" y2="0">
-        <stop offset="0%" stopColor="var(--muted)" stopOpacity="0.3" />
-        <stop offset="50%" stopColor="var(--muted)" stopOpacity="0.8" />
-        <stop offset="100%" stopColor="var(--muted)" stopOpacity="0.3" />
-        <animateTransform
-          attributeName="gradientTransform"
-          type="translate"
-          from="-1 0"
-          to="1 0"
-          dur="1.5s"
-          repeatCount="indefinite"
-        />
-      </linearGradient>
-    </defs>
+function SkeletonGridLines() {
+  return (
+    <>
+      {[25, 50, 75].map((y) => (
+        <line key={y} x1="0" y1={y} x2="100" y2={y} stroke="var(--border)" strokeOpacity="0.3" strokeWidth="0.3" />
+      ))}
+    </>
   )
+}
+
+function SkeletonSvg({ id, children }: { id: string; children: React.ReactNode }) {
+  return (
+    <div className="h-[200px] px-2 pt-4 pb-4">
+      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id={`shimmer-${id}`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="var(--muted)" stopOpacity="0.3" />
+            <stop offset="50%" stopColor="var(--muted)" stopOpacity="0.8" />
+            <stop offset="100%" stopColor="var(--muted)" stopOpacity="0.3" />
+            <animateTransform attributeName="gradientTransform" type="translate" from="-1 0" to="1 0" dur="1.5s" repeatCount="indefinite" />
+          </linearGradient>
+        </defs>
+        <SkeletonGridLines />
+        {children}
+      </svg>
+    </div>
+  )
+}
+
+const SPRING_EASE = "0.34 1.56 0.64 1"
+const EASE_OUT = "0.4 0 0.2 1"
+
+function SpringBar({ x, w, h, fill, delay }: { x: number; w: number; h: number; fill: string; delay: number }) {
+  return (
+    <rect x={x} width={w} fill={fill} rx="0.8" y={100} height={0}>
+      <animate attributeName="y" from="100" to={100 - h} dur="0.6s" begin={`${delay}s`} fill="freeze" calcMode="spline" keySplines={SPRING_EASE} keyTimes="0;1" />
+      <animate attributeName="height" from="0" to={h} dur="0.6s" begin={`${delay}s`} fill="freeze" calcMode="spline" keySplines={SPRING_EASE} keyTimes="0;1" />
+    </rect>
+  )
+}
+
+function ChartSkeleton({ type }: { type: ChartType }) {
+  const id = useId()
+  const shimmerId = `shimmer-${id}`
 
   if (type === "line") {
-    // Animated line drawing from left to right
-    const points = AREA_POINTS.map((h, i) => {
-      const x = (i / (AREA_POINTS.length - 1)) * 100
-      const y = 100 - h
-      return `${x},${y}`
-    }).join(" ")
-
+    const points = AREA_POINTS.map((h, i) => `${(i / (AREA_POINTS.length - 1)) * 100},${100 - h}`).join(" ")
     return (
-      <div className="h-[200px] px-2 pt-4 pb-4">
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {shimmer}
-          {/* Grid lines */}
-          {[25, 50, 75].map((y) => (
-            <line
-              key={y}
-              x1="0"
-              y1={y}
-              x2="100"
-              y2={y}
-              stroke="var(--border)"
-              strokeOpacity="0.3"
-              strokeWidth="0.3"
-            />
-          ))}
-          <polyline
-            points={points}
-            fill="none"
-            stroke={`url(#shimmer-${id})`}
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-            strokeDasharray="300"
-            strokeDashoffset="300"
-          >
-            <animate
-              attributeName="stroke-dashoffset"
-              from="300"
-              to="0"
-              dur="1.2s"
-              fill="freeze"
-              calcMode="spline"
-              keySplines="0.4 0 0.2 1"
-              keyTimes="0;1"
-            />
-          </polyline>
-        </svg>
-      </div>
+      <SkeletonSvg id={id}>
+        <polyline points={points} fill="none" stroke={`url(#${shimmerId})`} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" strokeDasharray="300" strokeDashoffset="300">
+          <animate attributeName="stroke-dashoffset" from="300" to="0" dur="1.2s" fill="freeze" calcMode="spline" keySplines={EASE_OUT} keyTimes="0;1" />
+        </polyline>
+      </SkeletonSvg>
     )
   }
 
   if (type === "area" || type === "stackedArea") {
-    // Animated area fill rising upward
-    const points = AREA_POINTS.map((h, i) => {
-      const x = (i / (AREA_POINTS.length - 1)) * 100
-      const y = 100 - h
-      return `${x},${y}`
-    }).join(" ")
-    const areaPath = `M0,100 L${AREA_POINTS.map((h, i) => `${(i / (AREA_POINTS.length - 1)) * 100},${100 - h}`).join(" L")} L100,100 Z`
+    const points = AREA_POINTS.map((h, i) => `${(i / (AREA_POINTS.length - 1)) * 100},${100 - h}`).join(" ")
+    const areaPath = `M0,100 L${points.replace(/,/g, " ").split(" ").reduce<string[]>((acc, v, i) => { if (i % 2 === 0) acc.push(v); else acc[acc.length - 1] += `,${v}`; return acc }, []).join(" L")} L100,100 Z`
 
     return (
-      <div className="h-[200px] px-2 pt-4 pb-4">
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {shimmer}
-          {/* Grid lines */}
-          {[25, 50, 75].map((y) => (
-            <line
-              key={y}
-              x1="0"
-              y1={y}
-              x2="100"
-              y2={y}
-              stroke="var(--border)"
-              strokeOpacity="0.3"
-              strokeWidth="0.3"
-            />
-          ))}
-          {/* Area fill with clip animation */}
-          <clipPath id={`clip-${id}`}>
-            <rect x="0" y="0" width="0" height="100">
-              <animate
-                attributeName="width"
-                from="0"
-                to="100"
-                dur="1s"
-                fill="freeze"
-                calcMode="spline"
-                keySplines="0.4 0 0.2 1"
-                keyTimes="0;1"
-              />
-            </rect>
-          </clipPath>
-          <path
-            d={areaPath}
-            fill={`url(#shimmer-${id})`}
-            fillOpacity="0.5"
-            clipPath={`url(#clip-${id})`}
-          />
-          <polyline
-            points={points}
-            fill="none"
-            stroke="var(--muted-foreground)"
-            strokeOpacity="0.3"
-            strokeWidth="1"
-            vectorEffect="non-scaling-stroke"
-            strokeLinecap="round"
-            clipPath={`url(#clip-${id})`}
-          />
-        </svg>
-      </div>
+      <SkeletonSvg id={id}>
+        <clipPath id={`clip-${id}`}>
+          <rect x="0" y="0" width="0" height="100">
+            <animate attributeName="width" from="0" to="100" dur="1s" fill="freeze" calcMode="spline" keySplines={EASE_OUT} keyTimes="0;1" />
+          </rect>
+        </clipPath>
+        <path d={areaPath} fill={`url(#${shimmerId})`} fillOpacity="0.5" clipPath={`url(#clip-${id})`} />
+        <polyline points={points} fill="none" stroke="var(--muted-foreground)" strokeOpacity="0.3" strokeWidth="1" vectorEffect="non-scaling-stroke" strokeLinecap="round" clipPath={`url(#clip-${id})`} />
+      </SkeletonSvg>
     )
   }
 
   if (type === "stackedBar") {
-    // Stacked bars rising from bottom
     const barW = 100 / STACKED_BAR_SPLITS.length
     const gap = barW * 0.2
-    const colors = ["var(--muted)", "var(--border)", "var(--muted)"]
+    const fills = ["var(--muted)", "var(--border)", "var(--muted)"]
 
     return (
-      <div className="h-[200px] px-2 pt-4 pb-4">
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {shimmer}
-          {[25, 50, 75].map((y) => (
-            <line
-              key={y}
-              x1="0"
-              y1={y}
-              x2="100"
-              y2={y}
-              stroke="var(--border)"
-              strokeOpacity="0.3"
-              strokeWidth="0.3"
-            />
-          ))}
-          {STACKED_BAR_SPLITS.map((splits, i) => {
-            const x = i * barW + gap / 2
-            const w = barW - gap
-            let yOffset = 100
-            return splits.map((h, j) => {
-              yOffset -= h
-              return (
-                <rect
-                  key={`${i}-${j}`}
-                  x={x}
-                  width={w}
-                  fill={j === 0 ? `url(#shimmer-${id})` : colors[j % colors.length]}
-                  fillOpacity={0.6 - j * 0.15}
-                  rx="0.5"
-                  y={100}
-                  height={0}
-                >
-                  <animate
-                    attributeName="y"
-                    from="100"
-                    to={yOffset}
-                    dur="0.6s"
-                    begin={`${i * 0.06}s`}
-                    fill="freeze"
-                    calcMode="spline"
-                    keySplines="0.34 1.56 0.64 1"
-                    keyTimes="0;1"
-                  />
-                  <animate
-                    attributeName="height"
-                    from="0"
-                    to={h}
-                    dur="0.6s"
-                    begin={`${i * 0.06}s`}
-                    fill="freeze"
-                    calcMode="spline"
-                    keySplines="0.34 1.56 0.64 1"
-                    keyTimes="0;1"
-                  />
-                </rect>
-              )
-            })
-          })}
-        </svg>
-      </div>
+      <SkeletonSvg id={id}>
+        {STACKED_BAR_SPLITS.map((splits, i) => {
+          const x = i * barW + gap / 2
+          const w = barW - gap
+          let yOffset = 100
+          return splits.map((h, j) => {
+            yOffset -= h
+            return (
+              <SpringBar key={`${i}-${j}`} x={x} w={w} h={h} fill={j === 0 ? `url(#${shimmerId})` : fills[j % fills.length]!} delay={i * 0.06} />
+            )
+          })
+        })}
+      </SkeletonSvg>
     )
   }
 
-  // Default: bar chart skeleton with spring-up animation
+  // bar
   const barW = 100 / BAR_HEIGHTS.length
   const gap = barW * 0.25
 
   return (
-    <div className="h-[200px] px-2 pt-4 pb-4">
-      <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {shimmer}
-        {[25, 50, 75].map((y) => (
-          <line
-            key={y}
-            x1="0"
-            y1={y}
-            x2="100"
-            y2={y}
-            stroke="var(--border)"
-            strokeOpacity="0.3"
-            strokeWidth="0.3"
-          />
-        ))}
-        {BAR_HEIGHTS.map((h, i) => {
-          const x = i * barW + gap / 2
-          const w = barW - gap
-          return (
-            <rect
-              key={i}
-              x={x}
-              width={w}
-              fill={`url(#shimmer-${id})`}
-              rx="0.8"
-              y={100}
-              height={0}
-            >
-              <animate
-                attributeName="y"
-                from="100"
-                to={100 - h}
-                dur="0.6s"
-                begin={`${i * 0.06}s`}
-                fill="freeze"
-                calcMode="spline"
-                keySplines="0.34 1.56 0.64 1"
-                keyTimes="0;1"
-              />
-              <animate
-                attributeName="height"
-                from="0"
-                to={h}
-                dur="0.6s"
-                begin={`${i * 0.06}s`}
-                fill="freeze"
-                calcMode="spline"
-                keySplines="0.34 1.56 0.64 1"
-                keyTimes="0;1"
-              />
-            </rect>
-          )
-        })}
-      </svg>
-    </div>
+    <SkeletonSvg id={id}>
+      {BAR_HEIGHTS.map((h, i) => (
+        <SpringBar key={i} x={i * barW + gap / 2} w={barW - gap} h={h} fill={`url(#${shimmerId})`} delay={i * 0.06} />
+      ))}
+    </SkeletonSvg>
   )
 }

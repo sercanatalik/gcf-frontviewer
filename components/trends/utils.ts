@@ -37,9 +37,8 @@ export function formatDateLabel(dateStr: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export function sanitizeKey(key: string): string {
-  return String(key).replace(/[^a-zA-Z0-9]/g, "_")
-}
+import { sanitizeKey } from "@/lib/utils"
+export { sanitizeKey }
 
 /**
  * Transform raw ungrouped time-series rows into chart data.

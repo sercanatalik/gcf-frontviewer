@@ -13,6 +13,8 @@ import type { TrendParams } from "./use-trend-data"
 
 export type ChartType = "area" | "line" | "bar" | "stackedArea" | "stackedBar"
 
+export type FormatterType = "currency" | "count" | "bps" | "percent" | "days" | "number"
+
 export interface TrendCardDef {
   id: string
   title: string
@@ -21,7 +23,7 @@ export interface TrendCardDef {
   iconColor: string
   chartType: ChartType
   params: TrendParams
-  formatter: "currency" | "count" | "bps" | "percent" | "days" | "number"
+  formatter: FormatterType
   size: "normal" | "wide"
 }
 
