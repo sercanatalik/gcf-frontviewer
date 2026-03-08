@@ -1,9 +1,10 @@
+import Link from "next/link"
 import { TrueFocus } from "@/components/ui/true-focus"
 
 export function DashboardHeader() {
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="text-2xl font-bold tracking-tight">
+      <Link href="/" className="text-2xl font-bold tracking-tight no-underline">
         <TrueFocus
           sentence="GCF"
           blurAmount={0}
@@ -12,7 +13,7 @@ export function DashboardHeader() {
           animationDuration={0.5}
           pauseBetweenAnimations={5}
         />  &nbsp; Frontview
-      </h1>
+      </Link>
     </div>
   )
 }
