@@ -13,6 +13,11 @@
   },
   "dependencies": {
     "@clickhouse/client": "^1.18.1",
+    "@perspective-dev/client": "^4.2.0",
+    "@perspective-dev/viewer": "^4.2.0",
+    "@perspective-dev/viewer-d3fc": "^4.2.0",
+    "@perspective-dev/viewer-datagrid": "^4.2.0",
+    "@perspective-dev/workspace": "^4.2.0",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-store": "^0.9.1",
     "@tanstack/react-table": "^8.21.3",

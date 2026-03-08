@@ -22,3 +22,14 @@ export function getClickHouseClient() {
   }
   return client
 }
+
+export const allowedTables: string[] = (
+  process.env.CLICKHOUSE_TABLES || "gcf_risk_mv,gcf_hmsbook,gcf_counterparty,gcf_trade"
+)
+  .split(",")
+  .map((t) => t.trim())
+  .filter(Boolean)
+
+export function isTableAllowed(name: string): boolean {
+  return allowedTables.length === 0 || allowedTables.includes(name)
+}
