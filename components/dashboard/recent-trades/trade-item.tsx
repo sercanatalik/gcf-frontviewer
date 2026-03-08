@@ -136,6 +136,11 @@ export function TradeItem({ trade, variant, onClick }: TradeItemProps) {
         <span className="text-[10px] tabular-nums text-muted-foreground">
           {formatSpread(trade.fundingMargin)}
         </span>
+        {trade.fixedRate != null && (
+          <span className="text-[10px] tabular-nums text-muted-foreground">
+            FR {trade.fixedRate.toFixed(2)}%
+          </span>
+        )}
         {trade.haircut != null && trade.haircut > 0 && (
           <span className="text-[10px] tabular-nums text-muted-foreground">
             HC {trade.haircut.toFixed(1)}%

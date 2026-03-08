@@ -167,7 +167,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
           </DialogHeader>
 
           {/* KPI strip */}
-          <div className="mt-4 grid grid-cols-6 gap-3">
+          <div className="mt-4 grid grid-cols-7 gap-3">
             <KpiCard
               label="Funding"
               value={formatCurrency(trade.fundingAmount)}
@@ -176,6 +176,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
             <KpiCard label="Collateral" value={formatCurrency(trade.collateralAmount)} />
             <KpiCard label="Exposure" value={formatCurrency(trade.financingExposure)} />
             <KpiCard label="Margin" value={formatSpread(trade.fundingMargin)} />
+            <KpiCard label="Fixed Rate" value={trade.fixedRate != null ? `${trade.fixedRate.toFixed(4)}%` : "N/A"} />
             <KpiCard label="Haircut" value={formatPct(trade.haircut)} />
             <KpiCard
               label="Maturity"

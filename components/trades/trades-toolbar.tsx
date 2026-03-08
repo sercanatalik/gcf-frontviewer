@@ -39,6 +39,7 @@ const sortOptions = [
   { value: "counterParty", label: "Counterparty" },
   { value: "hmsDesk", label: "Desk" },
   { value: "fundingMargin", label: "Margin" },
+  { value: "fixedRate", label: "Fixed Rate" },
   { value: "cashOut", label: "Cash Out" },
 ]
 

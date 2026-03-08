@@ -5,6 +5,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Banknote,
+  Percent,
   TrendingUp,
   Users,
   BookOpen,
@@ -40,6 +41,16 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
     )
     const counterparties = new Set(trades.map((t) => t.counterParty)).size
     const desks = new Set(trades.map((t) => t.hmsDesk)).size
+    const margins = trades.filter((t) => t.fundingMargin != null)
+    const avgMargin =
+      margins.length > 0
+        ? margins.reduce((s, t) => s + t.fundingMargin, 0) / margins.length
+        : null
+    const rates = trades.filter((t) => t.fixedRate != null)
+    const avgFixedRate =
+      rates.length > 0
+        ? rates.reduce((s, t) => s + t.fixedRate, 0) / rates.length
+        : null
     const payCount = trades.filter((t) => t.side === "PAY").length
     const recCount = trades.filter(
       (t) => t.side === "RECEIVE" || t.side === "REC",
@@ -51,6 +62,8 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
       totalExposure,
       counterparties,
       desks,
+      avgMargin,
+      avgFixedRate,
       payCount,
       recCount,
     }
@@ -58,8 +71,8 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
 
   if (isLoading && trades.length === 0) {
     return (
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
-        {Array.from({ length: 7 }).map((_, i) => (
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
+        {Array.from({ length: 9 }).map((_, i) => (
           <Skeleton key={i} className="h-[52px] rounded-md" />
         ))}
       </div>
@@ -67,7 +80,7 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
       <StatCard
         label="Net Funding"
         value={formatCompact(stats.totalFunding)}
@@ -92,6 +105,16 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
         icon={Users}
       />
       <StatCard label="Desks" value={String(stats.desks)} icon={BookOpen} />
+      <StatCard
+        label="Avg Margin"
+        value={stats.avgMargin != null ? `${stats.avgMargin.toFixed(2)}bp` : "—"}
+        icon={Percent}
+      />
+      <StatCard
+        label="Avg Fixed Rate"
+        value={stats.avgFixedRate != null ? `${stats.avgFixedRate.toFixed(2)}%` : "—"}
+        icon={Percent}
+      />
       <StatCard
         label="PAY / REC"
         value={`${stats.payCount} / ${stats.recCount}`}

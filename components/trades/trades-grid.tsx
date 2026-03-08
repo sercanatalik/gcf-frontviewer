@@ -115,6 +115,11 @@ function TradeCard({
           <span className="text-[10px] tabular-nums text-muted-foreground">
             {formatSpread(trade.fundingMargin)}
           </span>
+          {trade.fixedRate != null && (
+            <span className="text-[10px] tabular-nums text-muted-foreground">
+              FR {trade.fixedRate.toFixed(2)}%
+            </span>
+          )}
         </div>
       </div>
 

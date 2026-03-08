@@ -24,6 +24,7 @@ const SORTABLE_COLUMNS: Record<string, string> = {
   counterParty: "counterParty",
   hmsDesk: "hmsDesk",
   fundingMargin: "fundingMargin",
+  fixedRate: "fixedRate",
   cashOut: "cashOut",
 }
 

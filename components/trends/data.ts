@@ -82,6 +82,21 @@ export const trendCards: TrendCardDef[] = [
     size: "normal",
   },
   {
+    id: "avg-fixed-rate",
+    title: "Average Fixed Rate",
+    description: "Weighted average fixed rate",
+    icon: Percent,
+    iconColor: "text-rose-500",
+    chartType: "line",
+    params: {
+      field: "fixedRate",
+      aggregation: "avgBy",
+      weightField: "fundingAmount",
+    },
+    formatter: "percent",
+    size: "normal",
+  },
+  {
     id: "top-counterparties",
     title: "Top Counterparties",
     description: "Funding by top counterparties over time",
