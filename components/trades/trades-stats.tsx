@@ -30,40 +30,44 @@ function formatCompact(value: number): string {
 
 export function TradesStats({ trades, isLoading }: TradesStatsProps) {
   const stats = useMemo(() => {
-    const totalFunding = trades.reduce((s, t) => s + (t.fundingAmount || 0), 0)
-    const totalCollateral = trades.reduce(
-      (s, t) => s + (t.collateralAmount || 0),
-      0,
-    )
-    const totalExposure = trades.reduce(
-      (s, t) => s + (t.financingExposure || 0),
-      0,
-    )
-    const counterparties = new Set(trades.map((t) => t.counterParty)).size
-    const desks = new Set(trades.map((t) => t.hmsDesk)).size
-    const margins = trades.filter((t) => t.fundingMargin != null)
-    const avgMargin =
-      margins.length > 0
-        ? margins.reduce((s, t) => s + t.fundingMargin, 0) / margins.length
-        : null
-    const rates = trades.filter((t) => t.fixedRate != null)
-    const avgFixedRate =
-      rates.length > 0
-        ? rates.reduce((s, t) => s + t.fixedRate, 0) / rates.length
-        : null
-    const payCount = trades.filter((t) => t.side === "PAY").length
-    const recCount = trades.filter(
-      (t) => t.side === "RECEIVE" || t.side === "REC",
-    ).length
+    let totalFunding = 0
+    let totalCollateral = 0
+    let totalExposure = 0
+    let marginSum = 0
+    let marginCount = 0
+    let rateSum = 0
+    let rateCount = 0
+    let payCount = 0
+    let recCount = 0
+    const counterparties = new Set<string>()
+    const desks = new Set<string>()
+
+    for (const t of trades) {
+      totalFunding += t.fundingAmount || 0
+      totalCollateral += t.collateralAmount || 0
+      totalExposure += t.financingExposure || 0
+      counterparties.add(t.counterParty)
+      desks.add(t.hmsDesk)
+      if (t.fundingMargin != null) {
+        marginSum += t.fundingMargin
+        marginCount++
+      }
+      if (t.fixedRate != null) {
+        rateSum += t.fixedRate
+        rateCount++
+      }
+      if (t.side === "PAY") payCount++
+      else if (t.side === "RECEIVE" || t.side === "REC") recCount++
+    }
 
     return {
       totalFunding,
       totalCollateral,
       totalExposure,
-      counterparties,
-      desks,
-      avgMargin,
-      avgFixedRate,
+      counterparties: counterparties.size,
+      desks: desks.size,
+      avgMargin: marginCount > 0 ? marginSum / marginCount : null,
+      avgFixedRate: rateCount > 0 ? rateSum / rateCount : null,
       payCount,
       recCount,
     }

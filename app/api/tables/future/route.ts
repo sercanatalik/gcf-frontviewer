@@ -33,15 +33,23 @@ export async function GET(request: NextRequest) {
 
     const groupByExpr = groupBy ? `, ${groupBy}` : ""
 
+    const partitionExpr = groupBy ? `PARTITION BY ${groupBy} ` : ""
+
     const query = `
       SELECT
-        toStartOfMonth(maturityDt) AS maturityDt
+        maturityDt
         ${groupByExpr},
-        sum(toFloat64OrZero(toString(${fieldName}))) AS ${fieldName}
-      FROM gcf_risk_mv
-      ${filterWhere}
-        AND maturityDt >= today()
-      GROUP BY maturityDt${groupByExpr}
+        sum(${fieldName}_monthly) OVER (${partitionExpr}ORDER BY maturityDt) AS ${fieldName}
+      FROM (
+        SELECT
+          toStartOfMonth(maturityDt) AS maturityDt
+          ${groupByExpr},
+          sum(toFloat64OrZero(toString(${fieldName}))) AS ${fieldName}_monthly
+        FROM gcf_risk_mv
+        ${filterWhere}
+          AND maturityDt >= today()
+        GROUP BY maturityDt${groupByExpr}
+      )
       ORDER BY maturityDt${groupByExpr}
     `
 
