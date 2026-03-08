@@ -78,9 +78,7 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
     if (typeof window === "undefined") return []
     return getCustomLayouts()
   })
-  const [savingName, setSavingName] = useState("")
-  const [savingDescription, setSavingDescription] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
+  const [saving, setSaving] = useState<{ name: string; description: string } | null>(null)
 
   const applyLayout = useCallback(
     async (preset: LayoutPreset) => {
@@ -102,17 +100,19 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
     [workspaceRef, router],
   )
 
+  const cancelSaving = useCallback(() => setSaving(null), [])
+
   const saveCurrentLayout = useCallback(async () => {
     const workspace = workspaceRef?.current
-    if (!workspace || !savingName.trim()) return
+    if (!workspace || !saving?.name.trim()) return
 
     try {
       const state = await workspace.save()
       const id = `custom-${Date.now()}`
       const newPreset: LayoutPreset = {
         id,
-        name: savingName.trim(),
-        description: savingDescription.trim() || "Custom saved layout",
+        name: saving.name.trim(),
+        description: saving.description.trim() || "Custom saved layout",
         icon: "table",
         layout: state as unknown as WorkspaceLayout,
       }
@@ -122,13 +122,11 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
       saveCustomLayouts(updated)
       setActiveLayout(id)
       localStorage.setItem(ACTIVE_LAYOUT_KEY, id)
-      setSavingName("")
-      setSavingDescription("")
-      setIsSaving(false)
+      setSaving(null)
     } catch (err) {
       console.error("Failed to save layout:", err)
     }
-  }, [workspaceRef, savingName, savingDescription, customLayouts])
+  }, [workspaceRef, saving, customLayouts])
 
   const deleteCustomLayout = useCallback(
     (id: string) => {
@@ -246,18 +244,15 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
           <>
             <DropdownMenuSeparator />
 
-            {isSaving ? (
+            {saving ? (
               <div className="flex flex-col gap-1.5 px-1.5 py-1">
                 <input
                   type="text"
-                  value={savingName}
-                  onChange={(e) => setSavingName(e.target.value)}
+                  value={saving.name}
+                  onChange={(e) => setSaving({ ...saving, name: e.target.value })}
                   onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      setIsSaving(false)
-                      setSavingName("")
-                      setSavingDescription("")
-                    }
+                    if (e.key === "Enter") saveCurrentLayout()
+                    if (e.key === "Escape") cancelSaving()
                   }}
                   placeholder="Name..."
                   autoFocus
@@ -265,15 +260,11 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
                 />
                 <input
                   type="text"
-                  value={savingDescription}
-                  onChange={(e) => setSavingDescription(e.target.value)}
+                  value={saving.description}
+                  onChange={(e) => setSaving({ ...saving, description: e.target.value })}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") saveCurrentLayout()
-                    if (e.key === "Escape") {
-                      setIsSaving(false)
-                      setSavingName("")
-                      setSavingDescription("")
-                    }
+                    if (e.key === "Escape") cancelSaving()
                   }}
                   placeholder="Description..."
                   className="h-7 rounded-md border bg-transparent px-2 text-xs outline-none focus:ring-1 focus:ring-ring"
@@ -283,7 +274,7 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
                   size="sm"
                   className="h-7 w-full"
                   onClick={saveCurrentLayout}
-                  disabled={!savingName.trim()}
+                  disabled={!saving.name.trim()}
                 >
                   <Check className="size-3.5" />
                   Save
@@ -293,7 +284,7 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
               <DropdownMenuItem
                 onClick={(e) => {
                   e.preventDefault()
-                  setIsSaving(true)
+                  setSaving({ name: "", description: "" })
                 }}
               >
                 <Save className="size-4" />

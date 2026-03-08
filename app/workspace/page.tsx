@@ -12,22 +12,20 @@ export default function WorkspacePage() {
   const { ready, loading } = usePerspective(workspaceRef)
 
   return (
-    <>
-      <div className="absolute inset-0 flex flex-col bg-muted">
-        <div className="flex shrink-0 items-start justify-between border-b bg-background px-5 py-4">
-          <DashboardHeader />
-          <FilterBar workspaceRef={workspaceRef} ready={ready} />
-        </div>
-
-        {!ready && <LoadingScreen progress={loading} />}
-        <div className={`${ready ? "flex" : "hidden"} flex-1 overflow-hidden`}>
-          <perspective-workspace
-            ref={workspaceRef}
-            id="psp_workspace"
-            className="flex-1 overflow-hidden border border-border"
-          />
-        </div>
+    <div className="absolute inset-0 flex flex-col bg-muted">
+      <div className="flex shrink-0 items-start justify-between border-b bg-background px-5 py-4">
+        <DashboardHeader />
+        <FilterBar workspaceRef={workspaceRef} ready={ready} />
       </div>
-    </>
+
+      {!ready && <LoadingScreen progress={loading} />}
+      <div className={`${ready ? "flex" : "hidden"} flex-1 overflow-hidden`}>
+        <perspective-workspace
+          ref={workspaceRef}
+          id="psp_workspace"
+          className="flex-1 overflow-hidden border border-border"
+        />
+      </div>
+    </div>
   )
 }
