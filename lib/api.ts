@@ -38,9 +38,9 @@ export function fetchTableData(
 
 export async function fetchAllTableData(
   tableName: string,
-  options: { asOfDate?: string; batchSize?: number } = {}
+  options: { asOfDate?: string; filters?: string; batchSize?: number } = {}
 ): Promise<Record<string, unknown>[]> {
-  const { asOfDate, batchSize = 100_000 } = options
+  const { asOfDate, filters, batchSize = 100_000 } = options
   const allRows: Record<string, unknown>[] = []
   let offset = 0
   let hasMore = true
@@ -50,6 +50,7 @@ export async function fetchAllTableData(
     sp.set("limit", String(batchSize))
     sp.set("offset", String(offset))
     if (asOfDate) sp.set("asofDate", asOfDate)
+    if (filters) sp.set("filters", filters)
 
     const data = await apiFetch<TableQueryResponse>(
       `/api/tables/${tableName}?${sp.toString()}`

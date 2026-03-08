@@ -1,9 +1,13 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace"
+import { useStore } from "@tanstack/react-store"
 import type { LoadingProgress, EnrichedTableInfo } from "@/lib/types"
 import { fetchTables, fetchAllTableData } from "@/lib/api"
+import { filtersStore } from "@/lib/store/filters"
+import { serializeFilters } from "@/lib/filters/serialize"
+import type { SerializedFilter } from "@/lib/filters/serialize"
 import { basePath } from "@/lib/utils"
 
 const STORAGE_KEY = "perspective-workspace-state"
@@ -13,6 +17,47 @@ const INITIAL_PROGRESS: LoadingProgress = {
   tablesTotal: 0,
   tablesLoaded: 0,
   currentTable: "",
+}
+
+// Global state that survives soft navigations
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedClient: any = null
+let cachedTables: EnrichedTableInfo[] = []
+let wasmInitPromise: Promise<void> | null = null
+
+async function initWasm() {
+  if (wasmInitPromise) return wasmInitPromise
+  wasmInitPromise = (async () => {
+    await import("@perspective-dev/viewer-datagrid")
+    await import("@perspective-dev/viewer-d3fc")
+    await import("@perspective-dev/viewer")
+    await import("@perspective-dev/workspace")
+
+    const perspective = (await import("@perspective-dev/client")).default
+    const viewer = await import("@perspective-dev/viewer")
+    perspective.init_client(fetch(`${basePath}/perspective-js.wasm`))
+    perspective.init_server(fetch(`${basePath}/perspective-server.wasm`))
+    await viewer.init_client(fetch(`${basePath}/perspective-viewer.wasm`))
+    cachedClient = await perspective.worker()
+  })()
+  return wasmInitPromise
+}
+
+/** Keep only filters whose field exists as a column in the table. */
+function filterParamForTable(
+  filtersParam: string,
+  tableInfo: EnrichedTableInfo
+): string | undefined {
+  if (!filtersParam) return undefined
+  try {
+    const parsed: SerializedFilter[] = JSON.parse(filtersParam)
+    const colNames = new Set(tableInfo.columns.map((c) => c.name))
+    const applicable = parsed.filter((f) => colNames.has(f.field))
+    if (applicable.length === 0) return undefined
+    return JSON.stringify(applicable)
+  } catch {
+    return undefined
+  }
 }
 
 function buildDefaultLayout(tables: EnrichedTableInfo[]) {
@@ -46,17 +91,48 @@ function buildDefaultLayout(tables: EnrichedTableInfo[]) {
   }
 }
 
+function coerceRows(
+  rows: Record<string, unknown>[],
+  colTypes: Map<string, string>
+) {
+  for (const row of rows) {
+    for (const [key, val] of Object.entries(row)) {
+      if (val == null) continue
+      const pType = colTypes.get(key)
+      if (!pType) continue
+      switch (pType) {
+        case "string":
+          if (typeof val !== "string") row[key] = String(val)
+          break
+        case "datetime":
+          row[key] = new Date(val as string | number)
+          break
+        case "integer":
+          if (typeof val === "string") row[key] = parseInt(val, 10)
+          break
+        case "float":
+          if (typeof val === "string") row[key] = parseFloat(val)
+          break
+        case "boolean":
+          if (typeof val !== "boolean") row[key] = Boolean(val)
+          break
+      }
+    }
+  }
+  return rows
+}
+
 export function usePerspective(
   workspaceRef: React.RefObject<HTMLPerspectiveWorkspaceElement | null>
 ) {
   const [loading, setLoading] = useState<LoadingProgress>(INITIAL_PROGRESS)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef = useRef<any>(null)
-  const initStartedRef = useRef(false)
+  const tablesRef = useRef<EnrichedTableInfo[]>([])
+  const filters = useStore(filtersStore, (s) => s.filters)
+  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
 
   useEffect(() => {
-    if (initStartedRef.current) return
-    initStartedRef.current = true
 
     let cancelled = false
 
@@ -68,28 +144,25 @@ export function usePerspective(
 
     async function setup() {
       try {
-        // Phase 1: Init WASM
+        // Phase 1: Init WASM (cached globally)
         setLoading({ ...INITIAL_PROGRESS, phase: "init-wasm" })
-
-        await import("@perspective-dev/viewer-datagrid")
-        await import("@perspective-dev/viewer-d3fc")
-        await import("@perspective-dev/viewer")
-        await import("@perspective-dev/workspace")
-
-        const perspective = (await import("@perspective-dev/client")).default
-        const viewer = await import("@perspective-dev/viewer")
-        perspective.init_client(fetch(`${basePath}/perspective-js.wasm`))
-        perspective.init_server(fetch(`${basePath}/perspective-server.wasm`))
-        await viewer.init_client(fetch(`${basePath}/perspective-viewer.wasm`))
-        const client = await perspective.worker()
+        await initWasm()
+        const client = cachedClient
         clientRef.current = client
         if (cancelled) return
 
-        // Phase 2: Fetch schemas
-        if (cancelled) return
+        // Phase 2: Fetch schemas (use cache if available)
         setLoading((p) => ({ ...p, phase: "fetch-schemas" }))
 
-        const { tables } = await fetchTables()
+        let tables: EnrichedTableInfo[]
+        if (cachedTables.length > 0) {
+          tables = cachedTables
+        } else {
+          const result = await fetchTables()
+          tables = result.tables
+          cachedTables = tables
+        }
+        tablesRef.current = tables
         if (cancelled) return
 
         // Phase 3: Load tables
@@ -110,48 +183,35 @@ export function usePerspective(
             tablesLoaded: i,
           }))
 
-          const schema: Record<string, string> = {}
           const colTypes = new Map<string, string>()
           for (const col of tableInfo.columns) {
-            schema[col.name] = col.perspectiveType
             colTypes.set(col.name, col.perspectiveType)
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await client.table(schema as any, { name: tableInfo.name })
-
-          const rows = await fetchAllTableData(tableInfo.name, {
-            asOfDate: tableInfo.hasAsOfDate ? "__latest__" : undefined,
-          })
-
-          for (const row of rows) {
-            for (const [key, val] of Object.entries(row)) {
-              if (val == null) continue
-              const pType = colTypes.get(key)
-              if (!pType) continue
-              switch (pType) {
-                case "string":
-                  if (typeof val !== "string") row[key] = String(val)
-                  break
-                case "datetime":
-                  row[key] = new Date(val as string | number)
-                  break
-                case "integer":
-                  if (typeof val === "string") row[key] = parseInt(val, 10)
-                  break
-                case "float":
-                  if (typeof val === "string") row[key] = parseFloat(val)
-                  break
-                case "boolean":
-                  if (typeof val !== "boolean") row[key] = Boolean(val)
-                  break
-              }
+          // Try to open existing table, create if it doesn't exist
+          let tbl
+          try {
+            tbl = await client.open_table(tableInfo.name)
+          } catch {
+            const schema: Record<string, string> = {}
+            for (const col of tableInfo.columns) {
+              schema[col.name] = col.perspectiveType
             }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await client.table(schema as any, { name: tableInfo.name })
+            tbl = await client.open_table(tableInfo.name)
           }
 
-          const tbl = await client.open_table(tableInfo.name)
+          const tableFilters = filterParamForTable(filtersParam, tableInfo)
+          const rows = await fetchAllTableData(tableInfo.name, {
+            asOfDate: tableInfo.hasAsOfDate ? "__latest__" : undefined,
+            filters: tableFilters,
+          })
+
+          coerceRows(rows, colTypes)
+
           if (rows.length > 0) {
-            await tbl.update(rows)
+            await tbl.replace(rows)
           }
         }
 
@@ -398,6 +458,47 @@ export function usePerspective(
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Re-fetch and replace table data when filters change after init
+  const prevFiltersRef = useRef(filtersParam)
+  useEffect(() => {
+    if (prevFiltersRef.current === filtersParam) return
+    prevFiltersRef.current = filtersParam
+
+    const client = clientRef.current
+    const tables = tablesRef.current
+    if (!client || tables.length === 0 || loading.phase !== "done") return
+
+    let cancelled = false
+
+    async function reload() {
+      for (const tableInfo of tables) {
+        if (cancelled) return
+
+        const colTypes = new Map<string, string>()
+        for (const col of tableInfo.columns) {
+          colTypes.set(col.name, col.perspectiveType)
+        }
+
+        const tableFilters = filterParamForTable(filtersParam, tableInfo)
+        const rows = await fetchAllTableData(tableInfo.name, {
+          asOfDate: tableInfo.hasAsOfDate ? "__latest__" : undefined,
+          filters: tableFilters,
+        })
+
+        if (cancelled) return
+        coerceRows(rows, colTypes)
+
+        const tbl = await client.open_table(tableInfo.name)
+        await tbl.replace(rows)
+      }
+    }
+
+    reload()
+    return () => {
+      cancelled = true
+    }
+  }, [filtersParam, loading.phase])
 
   return {
     ready: loading.phase === "done",

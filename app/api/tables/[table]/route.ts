@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient, isTableAllowed } from "@/lib/clickhouse"
+import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
 
 const MAX_LIMIT = 1000000
 const DEFAULT_LIMIT = 1000
@@ -67,8 +68,16 @@ export async function GET(
     }
 
     const whereClauses: string[] = []
-    const queryParams: Record<string, string> = {}
+    const queryParams: Record<string, unknown> = {}
     let paramIndex = 0
+
+    // Handle serialized filters JSON (same format as dashboard routes)
+    const filtersParam = searchParams.get("filters")
+    if (filtersParam) {
+      const { clauses, params } = buildWhereClausesFromFilters(filtersParam)
+      whereClauses.push(...clauses)
+      Object.assign(queryParams, params)
+    }
 
     if (asOfDate === "__latest__") {
       const maxResult = await clickhouse.query({
