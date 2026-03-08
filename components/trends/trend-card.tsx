@@ -45,7 +45,7 @@ function TrendTooltip({
   groups,
 }: {
   active?: boolean
-  payload?: { name: string; value: number; dataKey: string; color?: string }[]
+  payload?: { name: string; value: number; dataKey: string; color?: string; payload?: Record<string, unknown> }[]
   label?: string
   formatter: string
   groups: string[]
@@ -53,10 +53,20 @@ function TrendTooltip({
   if (!active || !payload?.length) return null
 
   const total = payload.reduce((sum, p) => sum + (Number(p.value) || 0), 0)
+  const fullDate = String(payload[0]?.payload?.fullDate ?? label ?? "")
+  const [y, m, d] = fullDate.split("-")
+  const dateLabel =
+    y && m && d
+      ? new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
+      : fullDate
 
   return (
     <div className="rounded-lg border border-border bg-background px-3 py-2.5 text-xs shadow-lg">
-      <p className="mb-1.5 font-medium">{label}</p>
+      <p className="mb-1.5 font-medium">{dateLabel}</p>
       <div className="space-y-1">
         {payload.map((entry) => {
           const idx = groups.indexOf(entry.dataKey)
@@ -205,7 +215,7 @@ export function TrendCard({ card }: TrendCardProps) {
 // Unified chart component
 // ---------------------------------------------------------------------------
 
-const CHART_MARGIN = { top: 5, right: 5, left: 0, bottom: 0 }
+const CHART_MARGIN = { top: 5, right: 5, left: 0, bottom: 20 }
 const LINE_CURSOR = { stroke: "var(--muted-foreground)", strokeWidth: 1, strokeDasharray: "4 4" }
 const BAR_CURSOR = { fill: "var(--muted)", opacity: 0.5 }
 
@@ -226,11 +236,17 @@ function TrendChart({
     <>
       <CartesianGrid vertical={false} className="stroke-border/40" />
       <XAxis
-        dataKey="date"
+        dataKey="fullDate"
         tickLine={false}
         axisLine={false}
         tickMargin={8}
-        minTickGap={40}
+        minTickGap={32}
+        interval="preserveStartEnd"
+        tickFormatter={(v: string) => {
+          const [y, m, d] = String(v).split("-")
+          if (!y || !m || !d) return String(v)
+          return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+        }}
         className="text-[10px] fill-muted-foreground"
       />
       <YAxis

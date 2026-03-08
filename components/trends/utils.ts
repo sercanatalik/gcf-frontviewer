@@ -33,8 +33,9 @@ export function formatValue(value: number, formatter: string): string {
 }
 
 export function formatDateLabel(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  const [y, m, d] = dateStr.split("-")
+  if (!y || !m || !d) return dateStr
+  return new Date(Number(y), Number(m) - 1, Number(d)).toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
 import { sanitizeKey } from "@/lib/utils"
