@@ -39,7 +39,7 @@ export function LoadingScreen({ progress }: LoadingScreenProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="flex flex-1 items-center justify-center"
       style={{ backgroundColor: "#1e1e1e" }}
     >
       <div className="w-full max-w-md px-6">

@@ -2,39 +2,25 @@
 
 import { useRef } from "react"
 import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace"
-import { WorkspaceHeader } from "@/components/workspace/workspace-header"
+import { DashboardHeader } from "@/components/dashboard/header"
+import { FilterBar } from "@/components/dashboard/filter-bar"
 import { LoadingScreen } from "@/components/workspace/loading-screen"
 import { usePerspective } from "@/hooks/use-perspective"
 
 export default function WorkspacePage() {
   const workspaceRef = useRef<HTMLPerspectiveWorkspaceElement>(null)
-  const {
-    ready,
-    loading,
-    layouts,
-    activeLayout,
-    switchLayout,
-    exportLayout,
-    importLayout,
-    resetLayout,
-  } = usePerspective(workspaceRef)
+  const { ready, loading } = usePerspective(workspaceRef)
 
   return (
     <>
-      {!ready && <LoadingScreen progress={loading} />}
-      <div
-        className={`${ready ? "flex" : "hidden"} absolute inset-0 flex-col bg-muted`}
-      >
-        <WorkspaceHeader
-          layouts={layouts}
-          activeLayout={activeLayout}
-          onSwitchLayout={switchLayout}
-          onExport={exportLayout}
-          onImport={importLayout}
-          onReset={resetLayout}
-        />
+      <div className="absolute inset-0 flex flex-col bg-muted">
+        <div className="flex shrink-0 items-start justify-between border-b bg-background px-5 py-4">
+          <DashboardHeader />
+          <FilterBar />
+        </div>
 
-        <div className="flex flex-1 overflow-hidden">
+        {!ready && <LoadingScreen progress={loading} />}
+        <div className={`${ready ? "flex" : "hidden"} flex-1 overflow-hidden`}>
           <perspective-workspace
             ref={workspaceRef}
             id="psp_workspace"

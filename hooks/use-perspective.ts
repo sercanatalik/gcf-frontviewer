@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace"
 import type { LoadingProgress, EnrichedTableInfo } from "@/lib/types"
 import { fetchTables, fetchAllTableData } from "@/lib/api"
@@ -50,8 +50,6 @@ export function usePerspective(
   workspaceRef: React.RefObject<HTMLPerspectiveWorkspaceElement | null>
 ) {
   const [loading, setLoading] = useState<LoadingProgress>(INITIAL_PROGRESS)
-  const [layouts, setLayouts] = useState<string[]>([])
-  const [activeLayout, setActiveLayout] = useState<string>("")
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef = useRef<any>(null)
   const initStartedRef = useRef(false)
@@ -162,7 +160,7 @@ export function usePerspective(
           tablesLoaded: tables.length,
         }))
 
-        // Phase 4: Restore layout
+        // Phase 4: Restore workspace
         if (cancelled) return
         setLoading((p) => ({ ...p, phase: "restore-layout" }))
 
@@ -354,17 +352,6 @@ export function usePerspective(
           })
         }
 
-        // Fetch available layouts
-        try {
-          const res = await fetch(`${basePath}/api/layouts`)
-          const data = await res.json()
-          if (data.layouts) {
-            setLayouts(data.layouts.map((l: { name: string }) => l.name))
-          }
-        } catch {
-          /* ignore — layouts list is optional */
-        }
-
         const saved = localStorage.getItem(STORAGE_KEY)
         if (saved) {
           try {
@@ -403,79 +390,17 @@ export function usePerspective(
     setup()
     return () => {
       cancelled = true
-      window.removeEventListener("unhandledrejection", suppressViewNotFound)
+      // Defer removal so async Perspective errors that fire after
+      // unmount (e.g. navigating away) are still suppressed.
+      setTimeout(() => {
+        window.removeEventListener("unhandledrejection", suppressViewNotFound)
+      }, 2000)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const exportLayout = useCallback(async () => {
-    const workspace = workspaceRef.current
-    if (!workspace) return
-    const state = await workspace.save()
-    const blob = new Blob([JSON.stringify(state, null, 2)], {
-      type: "application/json",
-    })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = "workspace-config.json"
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [workspaceRef])
-
-  const importLayout = useCallback(
-    async (file: File) => {
-      const text = await file.text()
-      const workspace = workspaceRef.current
-      if (!workspace) return
-      const layout = JSON.parse(text)
-      await workspace.restore(layout)
-      localStorage.setItem(STORAGE_KEY, text)
-    },
-    [workspaceRef]
-  )
-
-  const switchLayout = useCallback(
-    async (name: string) => {
-      const workspace = workspaceRef.current
-      if (!workspace) return
-      try {
-        const res = await fetch(
-          `${basePath}/api/layouts/${encodeURIComponent(name)}`
-        )
-        if (!res.ok) return
-        const layout = await res.json()
-        await workspace.restore(layout)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(layout))
-        setActiveLayout(name)
-      } catch {
-        /* ignore */
-      }
-    },
-    [workspaceRef]
-  )
-
-  const resetLayout = useCallback(async () => {
-    const workspace = workspaceRef.current
-    if (!workspace) return
-    localStorage.removeItem(STORAGE_KEY)
-    try {
-      const { tables } = await fetchTables()
-      const layout = buildDefaultLayout(tables)
-      await workspace.restore(layout)
-    } catch {
-      /* ignore - workspace will remain in current state */
-    }
-  }, [workspaceRef])
-
   return {
     ready: loading.phase === "done",
     loading,
-    layouts,
-    activeLayout,
-    switchLayout,
-    exportLayout,
-    importLayout,
-    resetLayout,
   }
 }
