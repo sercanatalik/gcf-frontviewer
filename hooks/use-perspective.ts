@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace"
 import { useStore } from "@tanstack/react-store"
 import type { LoadingProgress, EnrichedTableInfo } from "@/lib/types"
-import { fetchTables, fetchAllTableData } from "@/lib/api"
+import { fetchTables, fetchAllTableData, fetchDailySummary } from "@/lib/api"
 import { filtersStore } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
 import type { SerializedFilter } from "@/lib/filters/serialize"
@@ -219,6 +219,40 @@ export function usePerspective(
           ...p,
           tablesLoaded: tables.length,
         }))
+
+        // Load daily summary virtual table (gcf_risk_mv grouped by asOfDate)
+        {
+          const DAILY_SUMMARY_TABLE = "gcf_daily_summary"
+          const dailySummarySchema: Record<string, string> = {
+            asofDate: "datetime",
+            cashOut: "float",
+            fundingAmount: "float",
+            collateralAmount: "float",
+          }
+
+          let dsTbl
+          try {
+            dsTbl = await client.open_table(DAILY_SUMMARY_TABLE)
+          } catch {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await client.table(dailySummarySchema as any, {
+              name: DAILY_SUMMARY_TABLE,
+            })
+            dsTbl = await client.open_table(DAILY_SUMMARY_TABLE)
+          }
+
+          const dsFilters = filtersParam || undefined
+          const dsRows = await fetchDailySummary({ filters: dsFilters })
+
+          const dsColTypes = new Map<string, string>(
+            Object.entries(dailySummarySchema),
+          )
+          coerceRows(dsRows, dsColTypes)
+
+          if (dsRows.length > 0) {
+            await dsTbl.replace(dsRows)
+          }
+        }
 
         // Phase 4: Restore workspace
         if (cancelled) return
@@ -492,6 +526,21 @@ export function usePerspective(
         const tbl = await client.open_table(tableInfo.name)
         await tbl.replace(rows)
       }
+
+      // Reload daily summary virtual table
+      if (cancelled) return
+      const dsRows = await fetchDailySummary({
+        filters: filtersParam || undefined,
+      })
+      const dsColTypes = new Map<string, string>([
+        ["asofDate", "datetime"],
+        ["cashOut", "float"],
+        ["fundingAmount", "float"],
+        ["collateralAmount", "float"],
+      ])
+      coerceRows(dsRows, dsColTypes)
+      const dsTbl = await client.open_table("gcf_daily_summary")
+      await dsTbl.replace(dsRows)
     }
 
     reload()

@@ -63,3 +63,29 @@ export async function fetchAllTableData(
 
   return allRows
 }
+
+export async function fetchDailySummary(
+  options: { filters?: string; batchSize?: number } = {},
+): Promise<Record<string, unknown>[]> {
+  const { filters, batchSize = 100_000 } = options
+  const allRows: Record<string, unknown>[] = []
+  let offset = 0
+  let hasMore = true
+
+  while (hasMore) {
+    const sp = new URLSearchParams()
+    sp.set("limit", String(batchSize))
+    sp.set("offset", String(offset))
+    if (filters) sp.set("filters", filters)
+
+    const data = await apiFetch<TableQueryResponse>(
+      `/api/tables/daily-summary?${sp.toString()}`,
+    )
+
+    allRows.push(...data.rows)
+    hasMore = data.meta.hasMore
+    offset += batchSize
+  }
+
+  return allRows
+}
