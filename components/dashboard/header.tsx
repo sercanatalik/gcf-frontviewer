@@ -12,7 +12,7 @@ export function DashboardHeader() {
           glowColor="hsl(var(--muted-foreground) / 0.6)"
           animationDuration={0.5}
           pauseBetweenAnimations={5}
-        />  &nbsp; Frontview
+        />  &nbsp; FrontView
       </Link>
     </div>
   )

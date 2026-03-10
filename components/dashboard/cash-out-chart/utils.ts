@@ -35,44 +35,62 @@ export function processHistoricalData(
     (k) => k !== "asofDate" && k !== fieldName,
   )
 
+  // Group by week, taking the last snapshot (latest asofDate) in each week
   if (!groupByField) {
-    const byMonth: Record<string, number> = {}
+    const byWeek: Record<string, { value: number; lastDate: string }> = {}
     for (const item of data) {
-      const m = toMonth(String(item.asofDate))
-      byMonth[m] = (byMonth[m] || 0) + Number(item[fieldName] || 0)
+      const d = String(item.asofDate)
+      const w = toWeek(d)
+      const existing = byWeek[w]
+      if (!existing || d > existing.lastDate) {
+        byWeek[w] = { value: Number(item[fieldName] || 0), lastDate: d }
+      }
     }
-    return Object.entries(byMonth)
-      .map(([m, v]) => ({ date: fmtDate(m + "-01"), fullDate: m + "-01", Total: v }))
+    return Object.entries(byWeek)
+      .map(([, { value, lastDate }]) => ({
+        date: fmtDay(lastDate),
+        fullDate: lastDate,
+        Total: value,
+      }))
       .sort(byDate)
   }
 
-  const byMonthMap: Record<string, Record<string, number>> = {}
+  // Grouped: collect all rows per date, then pick the last date per week
+  const byDate_: Record<string, Record<string, number>> = {}
   const totals: Record<string, number> = {}
 
   for (const item of data) {
-    const m = toMonth(String(item.asofDate))
+    const d = String(item.asofDate)
     const g = sanitizeKey(String(item[groupByField] || "Unknown"))
     const v = Number(item[fieldName] || 0)
     if (isNaN(v)) continue
-    const bucket = (byMonthMap[m] ??= {})
+    const bucket = (byDate_[d] ??= {})
     bucket[g] = (bucket[g] || 0) + v
-    totals[g] = (totals[g] || 0) + v
+    totals[g] = (totals[g] || 0) + Math.abs(v)
   }
 
-  const top4 = Object.entries(totals)
+  // Pick last date per week
+  const weekLastDate: Record<string, string> = {}
+  for (const d of Object.keys(byDate_).sort()) {
+    const w = toWeek(d)
+    weekLastDate[w] = d
+  }
+
+  const top5 = Object.entries(totals)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
+    .slice(0, 5)
     .map(([k]) => k)
 
-  return Object.entries(byMonthMap)
-    .map(([m, groups]) => {
-      const point: Record<string, unknown> = { date: fmtDate(m + "-01"), fullDate: m + "-01" }
+  return Object.values(weekLastDate)
+    .map((d) => {
+      const groups = byDate_[d]!
+      const point: Record<string, unknown> = { date: fmtDay(d), fullDate: d }
       let others = 0
       for (const [k, v] of Object.entries(groups)) {
-        if (top4.includes(k)) point[k] = v
+        if (top5.includes(k)) point[k] = v
         else others += v
       }
-      if (others > 0) point["Others"] = others
+      if (others !== 0) point["Others"] = others
       return point as { date: string; fullDate: string }
     })
     .sort(byDate)
@@ -93,7 +111,7 @@ export function processFutureData(
   if (!groupByField) {
     return data
       .map((item) => ({
-        date: fmtDate(String(item.maturityDt)),
+        date: fmtDay(String(item.maturityDt)),
         fullDate: String(item.maturityDt),
         Total: Number(item[fieldName] || 0),
       }))
@@ -114,17 +132,17 @@ export function processFutureData(
     totals[g] = (totals[g] || 0) + Math.abs(v)
   }
 
-  const top4 = Object.entries(totals)
+  const top5 = Object.entries(totals)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
+    .slice(0, 5)
     .map(([k]) => k)
 
   return Object.entries(byMonthMap)
     .map(([m, groups]) => {
-      const point: Record<string, unknown> = { date: fmtDate(m), fullDate: m }
+      const point: Record<string, unknown> = { date: fmtDay(m), fullDate: m }
       let others = 0
       for (const [k, v] of Object.entries(groups)) {
-        if (top4.includes(k)) point[k] = v
+        if (top5.includes(k)) point[k] = v
         else others += v
       }
       if (others !== 0) point["Others"] = others
@@ -148,6 +166,18 @@ export function getChartGroups(
 
 function fmtDate(d: string): string {
   return new Date(d).toLocaleDateString("en-US", { month: "short", year: "numeric" })
+}
+
+function fmtDay(d: string): string {
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
+
+function toWeek(d: string): string {
+  const date = new Date(d)
+  const day = date.getDay()
+  const monday = new Date(date)
+  monday.setDate(date.getDate() - ((day + 6) % 7))
+  return monday.toISOString().slice(0, 10)
 }
 
 function toMonth(d: string): string {

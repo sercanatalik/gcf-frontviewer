@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
     const query = `
       WITH monthly_data AS (
         SELECT
-          toStartOfMonth(maturityDt) AS month
+          toStartOfWeek(maturityDt) AS month
           ${groupByExpr},
           sum(toFloat64OrZero(toString(${fieldName}))) AS monthly_amount
         FROM gcf_risk_mv
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
           recordCount: (rows as unknown[]).length,
         },
       },
-      { headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } },
+      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
     )
   } catch (error) {
     console.error("Future data error:", error)
