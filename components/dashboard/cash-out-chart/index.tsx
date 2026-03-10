@@ -3,16 +3,67 @@
 import * as React from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ChartBarStacked, History, CalendarClock } from "lucide-react"
+import { ChartBarStacked, History, CalendarClock, Download } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
 import { HistoricalChart } from "./historical-chart"
 import { FutureChart } from "./future-chart"
 import { ChartSettings } from "./chart-settings"
+import { useHistoricalData, useFutureData } from "./use-cashout-data"
+import { processHistoricalData, processFutureData } from "./utils"
+
+function downloadCsv(
+  rows: Record<string, unknown>[],
+  filename: string,
+) {
+  if (rows.length === 0) return
+  const keys = Object.keys(rows[0]!)
+  const header = keys.join(",")
+  const lines = rows.map((row) =>
+    keys.map((k) => {
+      const v = row[k]
+      if (v == null) return ""
+      const s = String(v)
+      return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? `"${s.replace(/"/g, '""')}"`
+        : s
+    }).join(","),
+  )
+  const csv = [header, ...lines].join("\n")
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 export function CashOutChart() {
   const [activeTab, setActiveTab] = React.useState("historical")
   const [fieldName, setFieldName] = React.useState("cashOut")
   const [groupBy, setGroupBy] = React.useState<string | undefined>(undefined)
+
+  const { data: historicalData } = useHistoricalData(fieldName, groupBy)
+  const { data: futureData } = useFutureData(fieldName, groupBy)
+
+  const handleDownload = React.useCallback(() => {
+    if (activeTab === "historical") {
+      const rows = historicalData?.data?.length
+        ? processHistoricalData(historicalData.data, fieldName)
+        : []
+      downloadCsv(rows, `historical_${fieldName}${groupBy ? `_by_${groupBy}` : ""}.csv`)
+    } else {
+      const rows = futureData?.data?.length
+        ? processFutureData(futureData.data, fieldName)
+        : []
+      downloadCsv(rows, `future_${fieldName}${groupBy ? `_by_${groupBy}` : ""}.csv`)
+    }
+  }, [activeTab, fieldName, groupBy, historicalData, futureData])
+
+  const hasData =
+    activeTab === "historical"
+      ? (historicalData?.data?.length ?? 0) > 0
+      : (futureData?.data?.length ?? 0) > 0
 
   return (
     <Card className="overflow-hidden">
@@ -35,12 +86,22 @@ export function CashOutChart() {
           </Tabs>
         </div>
 
-        <ChartSettings
-          fieldName={fieldName}
-          groupBy={groupBy}
-          onFieldChange={setFieldName}
-          onGroupByChange={setGroupBy}
-        />
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handleDownload}
+            disabled={!hasData}
+            title="Download CSV"
+            className="flex size-8 items-center justify-center rounded-md border border-border/60 bg-muted/50 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          >
+            <Download className="size-3.5" />
+          </button>
+          <ChartSettings
+            fieldName={fieldName}
+            groupBy={groupBy}
+            onFieldChange={setFieldName}
+            onGroupByChange={setGroupBy}
+          />
+        </div>
       </CardHeader>
 
       <CardContent className="relative pt-2">

@@ -2,6 +2,7 @@ export const FIELD_OPTIONS = [
   { value: "cashOut", label: "Cash Out" },
   { value: "fundingAmount", label: "Funding Amount" },
   { value: "collateralAmount", label: "Collateral Amount" },
+  { value: "weightedSpread", label: "Avg Spread (bps)" },
 ]
 
 export const CHART_COLORS = [
@@ -14,6 +15,15 @@ export const CHART_COLORS = [
 
 import { sanitizeKey } from "@/lib/utils"
 export { sanitizeKey }
+
+export function formatBps(value: number): string {
+  return `${value.toFixed(1)} bps`
+}
+
+export function getTickFormatter(fieldName: string): (value: number) => string {
+  if (fieldName === "weightedSpread") return formatBps
+  return formatCurrency
+}
 
 export function formatCurrency(value: number): string {
   const sign = value < 0 ? "-" : ""

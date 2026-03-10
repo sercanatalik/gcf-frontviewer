@@ -4,6 +4,10 @@ import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
 
+const WEIGHTED_FIELDS: Record<string, { numerator: string; weight: string }> = {
+  weightedSpread: { numerator: "fundingMargin", weight: "fundingAmount" },
+}
+
 /**
  * Strip asofDate entries from serialised filters and return the date value.
  * The historical route treats asofDate as an upper bound (<=), not exact match.
@@ -55,10 +59,15 @@ export async function GET(request: NextRequest) {
 
     const groupByExpr = groupBy ? `, ${groupBy}` : ""
 
+    const weighted = WEIGHTED_FIELDS[fieldName]
+    const selectExpr = weighted
+      ? `sum(toFloat64OrZero(toString(${weighted.numerator})) * toFloat64OrZero(toString(${weighted.weight}))) / nullIf(sum(toFloat64OrZero(toString(${weighted.weight}))), 0) AS ${fieldName}`
+      : `sum(toFloat64OrZero(toString(${fieldName}))) AS ${fieldName}`
+
     const query = `
       SELECT
         asofDate${groupByExpr},
-        sum(toFloat64OrZero(toString(${fieldName}))) AS ${fieldName}
+        ${selectExpr}
       FROM gcf_risk_mv
       ${whereStr}
       GROUP BY asofDate${groupByExpr}

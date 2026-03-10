@@ -12,7 +12,7 @@ import {
 } from "recharts"
 import { useHistoricalData } from "./use-cashout-data"
 import {
-  formatCurrency,
+  getTickFormatter,
   processHistoricalData,
   getChartGroups,
   CHART_COLORS,
@@ -34,6 +34,7 @@ export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
   )
 
   const groups = useMemo(() => getChartGroups(chartData), [chartData])
+  const tickFormatter = useMemo(() => getTickFormatter(fieldName), [fieldName])
   const isStacked = Boolean(data?.meta?.groupBy)
 
   if (isLoading) return <ChartSkeleton />
@@ -60,7 +61,7 @@ export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
             className="text-xs fill-muted-foreground"
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={tickFormatter}
             tickLine={false}
             axisLine={false}
             width={60}

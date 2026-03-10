@@ -64,7 +64,7 @@ export function ChartSettings({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 z-20 w-60 rounded-xl border border-border/60 bg-card p-4 shadow-xl"
+            className="absolute left-0 top-full mt-2 z-20 w-60 rounded-xl border border-border/60 bg-card p-4 shadow-xl"
           >
             <div className="space-y-4">
               <div className="space-y-1.5">

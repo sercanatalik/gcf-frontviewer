@@ -4,6 +4,10 @@ import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
 
+const WEIGHTED_FIELDS: Record<string, { numerator: string; weight: string }> = {
+  weightedSpread: { numerator: "fundingMargin", weight: "fundingAmount" },
+}
+
 /**
  * Extract asofDate from serialised filters so we can handle it specially.
  * The future route uses asofDate as snapshot date and maturity cutoff.
@@ -72,12 +76,17 @@ export async function GET(request: NextRequest) {
           FROM monthly_data
         )`
 
+    const weighted = WEIGHTED_FIELDS[fieldName]
+    const monthlyAggExpr = weighted
+      ? `sum(toFloat64OrZero(toString(${weighted.numerator})) * toFloat64OrZero(toString(${weighted.weight}))) / nullIf(sum(toFloat64OrZero(toString(${weighted.weight}))), 0) AS monthly_amount`
+      : `sum(toFloat64OrZero(toString(${fieldName}))) AS monthly_amount`
+
     const query = `
       WITH monthly_data AS (
         SELECT
           toStartOfWeek(maturityDt) AS month
           ${groupByExpr},
-          sum(toFloat64OrZero(toString(${fieldName}))) AS monthly_amount
+          ${monthlyAggExpr}
         FROM gcf_risk_mv
         ${filterWhere}
           AND ${maturityCutoff}

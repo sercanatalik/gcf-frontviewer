@@ -12,7 +12,7 @@ import {
 } from "recharts"
 import { useFutureData } from "./use-cashout-data"
 import {
-  formatCurrency,
+  getTickFormatter,
   processFutureData,
   getChartGroups,
   CHART_COLORS,
@@ -34,6 +34,7 @@ export function FutureChart({ fieldName, groupBy }: FutureChartProps) {
   )
 
   const groups = useMemo(() => getChartGroups(chartData), [chartData])
+  const tickFormatter = useMemo(() => getTickFormatter(fieldName), [fieldName])
   const isStacked = Boolean(data?.meta?.groupBy)
 
   if (isLoading) return <ChartSkeleton />
@@ -60,7 +61,7 @@ export function FutureChart({ fieldName, groupBy }: FutureChartProps) {
             className="text-xs fill-muted-foreground"
           />
           <YAxis
-            tickFormatter={formatCurrency}
+            tickFormatter={tickFormatter}
             tickLine={false}
             axisLine={false}
             width={60}
