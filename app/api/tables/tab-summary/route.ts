@@ -19,11 +19,13 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-    const { clauses, params } = filtersJson
+    const { clauses, params, hasAsofDate } = filtersJson
       ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown> }
+      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
-    clauses.push("asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
+    if (!hasAsofDate) {
+      clauses.push("asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
+    }
     const whereStr = `WHERE ${clauses.join(" AND ")}`
 
     const query = `

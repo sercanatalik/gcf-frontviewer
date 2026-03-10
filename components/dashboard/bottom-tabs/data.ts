@@ -9,8 +9,8 @@ export interface TabDef {
 export const tabs: TabDef[] = [
   {
     key: "location",
-    label: "By Trading Location",
-    groupBy: "hmsDesk",
+    label: "By Trading Desk",
+    groupBy: "hmsSL1",
     groupLabel: "Location",
     limit: 10,
   },
@@ -26,7 +26,7 @@ export const tabs: TabDef[] = [
     label: "Top Clients",
     groupBy: "counterpartyParentName",
     groupLabel: "Client",
-    limit: 10,
+    limit: 100,
   },
   {
     key: "wwrByCountry",

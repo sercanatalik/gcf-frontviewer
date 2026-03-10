@@ -2,8 +2,8 @@
 
 import { useMemo } from "react"
 import {
-  Bar,
-  BarChart,
+  Area,
+  AreaChart,
   CartesianGrid,
   XAxis,
   YAxis,
@@ -49,7 +49,15 @@ export function FutureChart({ fieldName, groupBy }: FutureChartProps) {
   return (
     <div>
       <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+        <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+          <defs>
+            {groups.map((group, i) => (
+              <linearGradient key={group} id={`fill-future-${i}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS[i % CHART_COLORS.length]} stopOpacity={0.3} />
+                <stop offset="95%" stopColor={CHART_COLORS[i % CHART_COLORS.length]} stopOpacity={0.05} />
+              </linearGradient>
+            ))}
+          </defs>
           <CartesianGrid vertical={false} className="stroke-border/50" />
           <XAxis
             dataKey="date"
@@ -68,25 +76,20 @@ export function FutureChart({ fieldName, groupBy }: FutureChartProps) {
           />
           <Tooltip
             content={<CustomTooltip groups={groups} />}
-            cursor={{ fill: "var(--muted)", opacity: 0.5 }}
+            cursor={{ stroke: "var(--muted-foreground)", strokeDasharray: "4 4" }}
           />
           {groups.map((group, i) => (
-            <Bar
+            <Area
               key={group}
+              type="monotone"
               dataKey={group}
               stackId={isStacked ? "stack" : undefined}
-              fill={CHART_COLORS[i % CHART_COLORS.length]}
-              radius={
-                isStacked
-                  ? i === groups.length - 1
-                    ? [4, 4, 0, 0]
-                    : [0, 0, 0, 0]
-                  : [4, 4, 0, 0]
-              }
-              maxBarSize={40}
+              stroke={CHART_COLORS[i % CHART_COLORS.length]}
+              fill={`url(#fill-future-${i})`}
+              strokeWidth={2}
             />
           ))}
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
       {isStacked && <CustomLegend groups={groups} />}
     </div>

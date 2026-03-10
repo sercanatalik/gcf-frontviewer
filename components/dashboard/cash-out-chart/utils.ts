@@ -89,38 +89,39 @@ export function processFutureData(
     (k) => k !== "maturityDt" && k !== fieldName,
   )
 
+  // SQL already returns cumulative decreasing values — just format for the chart
   if (!groupByField) {
-    const byMonth: Record<string, number> = {}
-    for (const item of data) {
-      const m = toMonth(String(item.maturityDt))
-      byMonth[m] = (byMonth[m] || 0) + Number(item[fieldName] || 0)
-    }
-    return Object.entries(byMonth)
-      .map(([m, v]) => ({ date: fmtDate(m + "-01"), fullDate: m + "-01", Total: v }))
+    return data
+      .map((item) => ({
+        date: fmtDate(String(item.maturityDt)),
+        fullDate: String(item.maturityDt),
+        Total: Number(item[fieldName] || 0),
+      }))
       .sort(byDate)
   }
 
+  // Grouped: pivot rows into { date, group1: val, group2: val, ... }
   const byMonthMap: Record<string, Record<string, number>> = {}
   const totals: Record<string, number> = {}
 
   for (const item of data) {
-    const m = toMonth(String(item.maturityDt))
+    const m = String(item.maturityDt)
     const g = sanitizeKey(String(item[groupByField] || "Unknown"))
     const v = Number(item[fieldName] || 0)
     if (isNaN(v)) continue
     const bucket = (byMonthMap[m] ??= {})
     bucket[g] = (bucket[g] || 0) + v
-    totals[g] = (totals[g] || 0) + v
+    totals[g] = (totals[g] || 0) + Math.abs(v)
   }
 
   const top4 = Object.entries(totals)
-    .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+    .sort((a, b) => b[1] - a[1])
     .slice(0, 4)
     .map(([k]) => k)
 
   return Object.entries(byMonthMap)
     .map(([m, groups]) => {
-      const point: Record<string, unknown> = { date: fmtDate(m + "-01"), fullDate: m + "-01" }
+      const point: Record<string, unknown> = { date: fmtDate(m), fullDate: m }
       let others = 0
       for (const [k, v] of Object.entries(groups)) {
         if (top4.includes(k)) point[k] = v

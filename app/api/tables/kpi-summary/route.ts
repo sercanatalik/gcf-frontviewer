@@ -52,16 +52,30 @@ export async function GET(request: NextRequest) {
     const client = getClickHouseClient()
 
     // Build filter clauses
-    const { clauses, params } = filtersJson
+    const { clauses, params, hasAsofDate } = filtersJson
       ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown> }
+      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
-    const filterWhere = clauses.length > 0 ? ` AND ${clauses.join(" AND ")}` : ""
+    // Separate asOfDate clause from other filters so we can use it in the CTE
+    const nonAsofClauses = hasAsofDate
+      ? clauses.filter((c) => !c.includes("asofDate"))
+      : clauses
+    const asofClause = hasAsofDate
+      ? clauses.find((c) => c.includes("asofDate"))
+      : null
+
+    const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
     const aggExprs = measures.map(buildAggExpr).join(", ")
+
+    // If user provided an asOfDate filter, use it to determine the current date;
+    // otherwise default to the max available date.
+    const latestDateExpr = hasAsofDate && asofClause
+      ? `SELECT max(asofDate) AS d FROM gcf_risk_mv WHERE ${asofClause}`
+      : `SELECT max(asofDate) AS d FROM gcf_risk_mv`
 
     const query = `
       WITH
-        latestDate AS (SELECT max(asofDate) AS d FROM gcf_risk_mv),
+        latestDate AS (${latestDateExpr}),
         prevDate AS (SELECT max(asofDate) AS d FROM gcf_risk_mv WHERE asofDate <= (SELECT d FROM latestDate) - toIntervalDay({relativeDays:UInt32}))
       SELECT
         'current' AS period, ${aggExprs}

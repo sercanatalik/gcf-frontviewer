@@ -4,6 +4,23 @@ import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
 
+/**
+ * Extract asofDate from serialised filters so we can handle it specially.
+ * The future route uses asofDate as snapshot date and maturity cutoff.
+ */
+function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: string | null } {
+  if (!filtersJson) return { cleaned: "", asofDate: null }
+  try {
+    const parsed = JSON.parse(filtersJson) as Array<{ field: string; operator: string; value: string[] }>
+    const asofEntry = parsed.find((f) => f.field === "asofDate")
+    const asofDate = asofEntry?.value?.[0] ?? null
+    const rest = parsed.filter((f) => f.field !== "asofDate")
+    return { cleaned: rest.length > 0 ? JSON.stringify(rest) : "", asofDate }
+  } catch {
+    return { cleaned: filtersJson, asofDate: null }
+  }
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const fieldName = searchParams.get("fieldName") || "cashOut"
@@ -20,37 +37,68 @@ export async function GET(request: NextRequest) {
   try {
     const client = getClickHouseClient()
 
-    const { clauses, params, hasAsofDate } = filtersJson
-      ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
+    const { cleaned, asofDate } = extractAsofDate(filtersJson)
 
-    // Scope to latest asofDate if not filtered
-    if (!hasAsofDate) {
+    const { clauses, params } = cleaned
+      ? buildWhereClausesFromFilters(cleaned)
+      : { clauses: [] as string[], params: {} as Record<string, unknown> }
+
+    // Scope to selected asofDate or latest
+    if (asofDate) {
+      clauses.push("gcf_risk_mv.asofDate = {_asof:String}")
+      params["_asof"] = asofDate
+    } else {
       clauses.push("gcf_risk_mv.asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
     }
+
+    // Maturity cutoff: use selected asofDate or today()
+    const maturityCutoff = asofDate
+      ? `maturityDt >= {_asof:String}`
+      : `maturityDt >= today()`
 
     const filterWhere = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
 
     const groupByExpr = groupBy ? `, ${groupBy}` : ""
-
     const partitionExpr = groupBy ? `PARTITION BY ${groupBy} ` : ""
+    const joinExpr = groupBy ? `JOIN total_per_group t ON m.${groupBy} = t.${groupBy}` : "CROSS JOIN total_amounts t"
+    const totalGroupBy = groupBy
+      ? `total_per_group AS (
+          SELECT ${groupBy}, SUM(monthly_amount) AS total
+          FROM monthly_data
+          GROUP BY ${groupBy}
+        )`
+      : `total_amounts AS (
+          SELECT SUM(monthly_amount) AS total
+          FROM monthly_data
+        )`
 
     const query = `
-      SELECT
-        maturityDt
-        ${groupByExpr},
-        sum(${fieldName}_monthly) OVER (${partitionExpr}ORDER BY maturityDt) AS ${fieldName}
-      FROM (
+      WITH monthly_data AS (
         SELECT
-          toStartOfMonth(maturityDt) AS maturityDt
+          toStartOfMonth(maturityDt) AS month
           ${groupByExpr},
-          sum(toFloat64OrZero(toString(${fieldName}))) AS ${fieldName}_monthly
+          sum(toFloat64OrZero(toString(${fieldName}))) AS monthly_amount
         FROM gcf_risk_mv
         ${filterWhere}
-          AND maturityDt >= today()
-        GROUP BY maturityDt${groupByExpr}
+          AND ${maturityCutoff}
+        GROUP BY month${groupByExpr}
+      ),
+      ${totalGroupBy},
+      cumulative_data AS (
+        SELECT
+          m.month
+          ${groupByExpr ? `, m.${groupBy}` : ""},
+          m.monthly_amount,
+          t.total - SUM(m.monthly_amount) OVER (${partitionExpr}ORDER BY m.month ROWS UNBOUNDED PRECEDING) AS remaining
+        FROM monthly_data m
+        ${joinExpr}
       )
-      ORDER BY maturityDt${groupByExpr}
+      SELECT
+        month AS maturityDt
+        ${groupByExpr},
+        remaining AS ${fieldName}
+      FROM cumulative_data
+      ORDER BY month${groupByExpr}
     `
 
     const result = await client.query({
