@@ -180,19 +180,19 @@ function TradeCard({
               Funding / Collateral currency
             </TooltipContent>
           </Tooltip>
-          {trade.cpRatingSnp && (
+          {trade.cp_ratingSnp && (
             <>
               <span className="text-border">·</span>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span className="cursor-default font-medium">
-                    {trade.cpRatingSnp}
+                    {trade.cp_ratingSnp}
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="text-xs">
                   S&P Rating
-                  {trade.cpRatingMoodys
-                    ? ` / Moody's: ${trade.cpRatingMoodys}`
+                  {trade.cp_ratingMoodys
+                    ? ` / Moody's: ${trade.cp_ratingMoodys}`
                     : ""}
                 </TooltipContent>
               </Tooltip>

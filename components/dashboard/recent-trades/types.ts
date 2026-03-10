@@ -7,7 +7,7 @@ export interface Trade {
   // Product
   productType: string
   productSubType: string
-  assetClass: string
+  hms_assetClass: string
 
   // Dates
   tradeDt: string
@@ -35,31 +35,30 @@ export interface Trade {
   collateralDesc: string
   collateralType: string
   collatCurrency: string
-  collatName: string
-  instrumentType: string
-  coupon: number
-  couponType: string
-  instrumentCcy: string
-  instrumentMaturityDt: string
+  i_desc: string
+  i_type: string
+  i_coupon: number
+  i_instrumentCcy: string
+  i_maturityDt: string
 
   // Identifiers
-  isinId: string
-  bbgId: string
-  ticker: string
+  i_isinId: string
+  i_bbgId: string
+  i_ticker: string
 
   // Counterparty
   counterParty: string
   counterpartyParentName: string
-  cpType: string
-  cpRatingMoodys: string
-  cpRatingSnp: string
-  cpCrr: string
-  counterpartyLei: string
-  countryOfRisk: string
-  domicileCountry: string
+  cp_type: string
+  cp_ratingMoodys: string
+  cp_ratingSnp: string
+  cp_crr: string
+  cp_lei: string
+  i_countryOfRisk: string
+  cp_country: string
 
   // Issuer
-  issuerName: string
+  i_issuerName: string
 
   // Trading / Book
   hmsDesk: string
@@ -67,12 +66,12 @@ export interface Trade {
   hmsPortfolio: string
   hmsSL1: string
   hmsSL2: string
-  primaryTrader: string
-  region: string
-  subRegion: string
-  tradingLocation: string
-  bookCategory: string
-  leName: string
+  hms_primaryTrader: string
+  hms_region: string
+  hms_subRegion: string
+  hms_tradingLocation: string
+  hms_bookCategory: string
+  hms_leName: string
 
   // FX
   fxSpot: number

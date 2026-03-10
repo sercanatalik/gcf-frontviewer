@@ -31,7 +31,7 @@ export const tabs: TabDef[] = [
   {
     key: "wwrByCountry",
     label: "Wrong Way Risk by Country",
-    groupBy: "countryOfRisk",
+    groupBy: "i_countryOfRisk",
     groupLabel: "Country",
     limit: 10,
   },

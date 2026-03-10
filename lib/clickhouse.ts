@@ -24,7 +24,7 @@ export function getClickHouseClient() {
 }
 
 export const allowedTables: string[] = (
-  process.env.CLICKHOUSE_TABLES || "gcf_risk_mv,gcf_hmsbook,gcf_counterparty,gcf_trade"
+  process.env.CLICKHOUSE_TABLES || "gcf_risk_mv,gcf_hmsbooks,gcf_counterpart,gcf_trade"
 )
   .split(",")
   .map((t) => t.trim())

@@ -6,13 +6,13 @@ import { TRADE_SELECT_EXPR } from "@/lib/columns"
 const SEARCH_COLUMNS = [
   "counterParty",
   "collateralDesc",
-  "ticker",
+  "i_ticker",
   "hmsDesk",
   "productType",
   "tradeId",
-  "issuerName",
-  "region",
-  "isinId",
+  "i_issuerName",
+  "hms_region",
+  "i_isinId",
   "counterpartyParentName",
 ]
 

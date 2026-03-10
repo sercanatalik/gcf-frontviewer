@@ -60,7 +60,7 @@ interface Stats {
   regions: number
   totalFunding: number
   totalCollateral: number
-  totalExposure: number
+  totalCashOut: number
   avgMargin: number
   avgHaircut: number
   payCount: number
@@ -74,10 +74,10 @@ interface Stats {
 function getStats(trades: Trade[]): Stats {
   const counterparties = new Set(trades.map((t) => t.counterParty)).size
   const desks = new Set(trades.map((t) => t.hmsDesk)).size
-  const regions = new Set(trades.map((t) => t.region)).size
+  const regions = new Set(trades.map((t) => t.hms_region)).size
   const totalFunding = trades.reduce((s, t) => s + (t.fundingAmount || 0), 0)
   const totalCollateral = trades.reduce((s, t) => s + (t.collateralAmount || 0), 0)
-  const totalExposure = trades.reduce((s, t) => s + (t.financingExposure || 0), 0)
+  const totalCashOut = trades.reduce((s, t) => s + (t.cashOut || 0), 0)
   const margins = trades.filter((t) => t.fundingMargin != null)
   const avgMargin = margins.length > 0
     ? margins.reduce((s, t) => s + t.fundingMargin, 0) / margins.length
@@ -103,7 +103,7 @@ function getStats(trades: Trade[]): Stats {
 
   const productBreakdown = breakdownOf("productType", 5)
   const deskBreakdown = breakdownOf("hmsDesk", 4)
-  const regionBreakdown = breakdownOf("region", 4)
+  const regionBreakdown = breakdownOf("hms_region", 4)
 
   // Top counterparties by absolute funding
   const cpMap = new Map<string, number>()
@@ -117,7 +117,7 @@ function getStats(trades: Trade[]): Stats {
 
   return {
     total: trades.length, counterparties, desks, regions,
-    totalFunding, totalCollateral, totalExposure, avgMargin, avgHaircut,
+    totalFunding, totalCollateral, totalCashOut, avgMargin, avgHaircut,
     payCount, recCount, productBreakdown, deskBreakdown, regionBreakdown, topCounterparties,
   }
 }
@@ -192,8 +192,8 @@ export function RecentTrades() {
                 icon={Banknote}
               />
               <MiniStat
-                label="Exposure"
-                value={formatCurrency(stats.totalExposure)}
+                label="Cash Out"
+                value={formatCurrency(stats.totalCashOut)}
                 icon={TrendingUp}
               />
               <MiniStat

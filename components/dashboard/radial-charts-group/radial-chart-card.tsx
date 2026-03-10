@@ -74,6 +74,10 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
           <div className="mx-auto flex aspect-square w-full max-w-[250px] items-center justify-center">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
+        ) : groups.length === 0 ? (
+          <div className="mx-auto flex aspect-square w-full max-w-[250px] items-center justify-center">
+            <span className="text-xs text-muted-foreground">No data</span>
+          </div>
         ) : (
           <ChartContainer
             config={chartConfig}

@@ -192,7 +192,7 @@ types/perspective.d.ts     # Perspective type declarations
 
 - API routes use parameterized queries (never interpolate user input into SQL)
 - ClickHouse singleton client with connection pooling (10 max, 30s timeout)
-- Table allowlist from `allowedTables` env var (defaults: gcf_risk_mv, gcf_hmsbook, gcf_counterparty, gcf_trade)
+- Table allowlist from `allowedTables` env var (defaults: gcf_risk_mv, gcf_hmsbooks, gcf_counterpart, gcf_trade)
 - Dark/light theme via next-themes with OKLch color variables; D key toggles theme
 - Animated header with TrueFocus glow effect
 - BasePath configurable via `NEXT_PUBLIC_BASE_PATH` env (default: `/gcf-frontview`)

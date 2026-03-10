@@ -70,9 +70,9 @@ export function TradeItem({ trade, variant, onClick }: TradeItemProps) {
           <span className="truncate text-[11px] text-muted-foreground">
             {trade.collateralDesc}
           </span>
-          {trade.ticker && (
+          {trade.i_ticker && (
             <span className="shrink-0 rounded bg-muted px-1 py-px font-mono text-[9px] text-muted-foreground">
-              {trade.ticker}
+              {trade.i_ticker}
             </span>
           )}
         </div>
@@ -108,15 +108,15 @@ export function TradeItem({ trade, variant, onClick }: TradeItemProps) {
                 Funding / Collateral currency
               </TooltipContent>
             </Tooltip>
-            {trade.cpRatingSnp && (
+            {trade.cp_ratingSnp && (
               <>
                 <span className="text-border">·</span>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="cursor-default font-medium">{trade.cpRatingSnp}</span>
+                    <span className="cursor-default font-medium">{trade.cp_ratingSnp}</span>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs">
-                    S&P Rating{trade.cpRatingMoodys ? ` / Moody's: ${trade.cpRatingMoodys}` : ""}
+                    S&P Rating{trade.cp_ratingMoodys ? ` / Moody's: ${trade.cp_ratingMoodys}` : ""}
                   </TooltipContent>
                 </Tooltip>
               </>

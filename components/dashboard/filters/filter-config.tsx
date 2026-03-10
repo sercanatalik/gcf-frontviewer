@@ -52,9 +52,9 @@ const filterFields: Record<string, FilterFieldDef> = {
   hmsBook:               { column: "hmsBook",               icon: <Layers className="size-3.5 text-purple-500" />,          type: "select", operators: selectOperators },
   collateralDesc:        { column: "collateralDesc",        icon: <Shield className="size-3.5 text-indigo-500" />,          type: "text",   operators: textOperators },
   collatCurrency:        { column: "collatCurrency",        icon: <CreditCard className="size-3.5 text-teal-500" />,        type: "select", operators: selectOperators },
-  issuerName:            { column: "issuerName",            icon: <Building className="size-3.5 text-blue-500" />,          type: "text",   operators: textOperators },
+  i_issuerName:          { column: "i_issuerName",           icon: <Building className="size-3.5 text-blue-500" />,          type: "text",   operators: textOperators },
   counterpartyParentName:{ column: "counterpartyParentName",icon: <Users className="size-3.5 text-amber-500" />,            type: "text",   operators: textOperators },
-  cpType:                { column: "cpType",                icon: <Network className="size-3.5 text-rose-500" />,           type: "select", operators: selectOperators },
+  cp_type:               { column: "cp_type",               icon: <Network className="size-3.5 text-rose-500" />,           type: "select", operators: selectOperators },
   asofDate:              { column: "asofDate",              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "select",   operators: [FilterOperators.IS], singleSelect: true, sortDesc: true, pinned: true },
 }
 

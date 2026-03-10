@@ -32,7 +32,7 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
   const stats = useMemo(() => {
     let totalFunding = 0
     let totalCollateral = 0
-    let totalExposure = 0
+    let totalCashOut = 0
     let marginSum = 0
     let marginCount = 0
     let rateSum = 0
@@ -45,7 +45,7 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
     for (const t of trades) {
       totalFunding += t.fundingAmount || 0
       totalCollateral += t.collateralAmount || 0
-      totalExposure += t.financingExposure || 0
+      totalCashOut += t.cashOut || 0
       counterparties.add(t.counterParty)
       desks.add(t.hmsDesk)
       if (t.fundingMargin != null) {
@@ -63,7 +63,7 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
     return {
       totalFunding,
       totalCollateral,
-      totalExposure,
+      totalCashOut,
       counterparties: counterparties.size,
       desks: desks.size,
       avgMargin: marginCount > 0 ? marginSum / marginCount : null,
@@ -99,8 +99,8 @@ export function TradesStats({ trades, isLoading }: TradesStatsProps) {
         icon={Banknote}
       />
       <StatCard
-        label="Exposure"
-        value={formatCompact(stats.totalExposure)}
+        label="Cash Out"
+        value={formatCompact(stats.totalCashOut)}
         icon={TrendingUp}
       />
       <StatCard

@@ -174,7 +174,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
               className={trade.fundingAmount >= 0 ? "text-foreground" : "text-muted-foreground"}
             />
             <KpiCard label="Collateral" value={formatCurrency(trade.collateralAmount)} />
-            <KpiCard label="Exposure" value={formatCurrency(trade.financingExposure)} />
+            <KpiCard label="Cash Out" value={formatCurrency(trade.cashOut)} />
             <KpiCard label="Margin" value={formatSpread(trade.fundingMargin)} />
             <KpiCard label="Fixed Rate" value={trade.fixedRate != null ? `${trade.fixedRate.toFixed(4)}%` : "N/A"} />
             <KpiCard label="Haircut" value={formatPct(trade.haircut)} />
@@ -239,7 +239,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                   <SectionHeader title="Instrument" />
                   <InfoItem icon={ArrowRightLeft} label="Product Type" value={val(trade.productType)} />
                   <InfoItem icon={Layers} label="Sub Type" value={val(trade.productSubType)} />
-                  <InfoItem icon={BarChart3} label="Asset Class" value={val(trade.assetClass)} />
+                  <InfoItem icon={BarChart3} label="Asset Class" value={val(trade.hms_assetClass)} />
                   <InfoItem icon={Landmark} label="Collateral Type" value={val(trade.collateralType)} />
                 </div>
 
@@ -247,20 +247,20 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                   <SectionHeader title="Counterparty" />
                   <InfoItem icon={Building2} label="Name" value={val(trade.counterParty)} />
                   <InfoItem icon={User} label="Parent" value={val(trade.counterpartyParentName)} />
-                  <InfoItem icon={Globe} label="Type" value={val(trade.cpType)} />
-                  <InfoItem icon={MapPin} label="Country of Risk" value={val(trade.countryOfRisk)} />
+                  <InfoItem icon={Globe} label="Type" value={val(trade.cp_type)} />
+                  <InfoItem icon={MapPin} label="Country of Risk" value={val(trade.i_countryOfRisk)} />
                 </div>
 
                 <div className="rounded-lg border p-4">
                   <SectionHeader title="Ratings" />
                   <InfoItem icon={ShieldCheck} label="S&P" value={
-                    <Badge variant="secondary" className="text-[10px]">{val(trade.cpRatingSnp)}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{val(trade.cp_ratingSnp)}</Badge>
                   } />
                   <InfoItem icon={ShieldCheck} label="Moody's" value={
-                    <Badge variant="secondary" className="text-[10px]">{val(trade.cpRatingMoodys)}</Badge>
+                    <Badge variant="secondary" className="text-[10px]">{val(trade.cp_ratingMoodys)}</Badge>
                   } />
-                  <InfoItem icon={Shield} label="CRR" value={val(trade.cpCrr)} />
-                  <InfoItem icon={MapPin} label="Domicile" value={val(trade.domicileCountry)} />
+                  <InfoItem icon={Shield} label="CRR" value={val(trade.cp_crr)} />
+                  <InfoItem icon={MapPin} label="Domicile" value={val(trade.cp_country)} />
                 </div>
               </div>
 
@@ -279,30 +279,29 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                 <div className="rounded-lg border p-4">
                   <SectionHeader title="Security Details" />
                   <InfoItem icon={FileText} label="Description" value={val(trade.collateralDesc)} />
-                  <InfoItem icon={Landmark} label="Collateral Name" value={val(trade.collatName)} />
+                  <InfoItem icon={Landmark} label="Collateral Name" value={val(trade.i_desc)} />
                   <InfoItem icon={Layers} label="Collateral Type" value={val(trade.collateralType)} />
-                  <InfoItem icon={BarChart3} label="Instrument Type" value={val(trade.instrumentType)} />
-                  <InfoItem icon={Building2} label="Issuer" value={val(trade.issuerName)} />
+                  <InfoItem icon={BarChart3} label="Instrument Type" value={val(trade.i_type)} />
+                  <InfoItem icon={Building2} label="Issuer" value={val(trade.i_issuerName)} />
                   <Separator className="my-2" />
-                  <InfoItem icon={Percent} label="Coupon" value={trade.coupon != null ? `${trade.coupon}%` : "N/A"} />
-                  <InfoItem icon={Layers} label="Coupon Type" value={val(trade.couponType)} />
-                  <InfoItem icon={CalendarClock} label="Instrument Maturity" value={formatDate(trade.instrumentMaturityDt)} />
+                  <InfoItem icon={Percent} label="Coupon" value={trade.i_coupon != null ? `${trade.i_coupon}%` : "N/A"} />
+                  <InfoItem icon={CalendarClock} label="Instrument Maturity" value={formatDate(trade.i_maturityDt)} />
                 </div>
 
                 <div className="rounded-lg border p-4">
                   <SectionHeader title="Identifiers & Currency" />
                   <InfoItem icon={Hash} label="ISIN" value={
-                    <span className="font-mono text-xs">{val(trade.isinId)}</span>
+                    <span className="font-mono text-xs">{val(trade.i_isinId)}</span>
                   } />
                   <InfoItem icon={Hash} label="BBG ID" value={
-                    <span className="font-mono text-xs">{val(trade.bbgId)}</span>
+                    <span className="font-mono text-xs">{val(trade.i_bbgId)}</span>
                   } />
                   <InfoItem icon={Hash} label="Ticker" value={
-                    <span className="font-mono text-xs">{val(trade.ticker)}</span>
+                    <span className="font-mono text-xs">{val(trade.i_ticker)}</span>
                   } />
                   <Separator className="my-2" />
                   <InfoItem icon={CreditCard} label="Collateral CCY" value={val(trade.collatCurrency)} />
-                  <InfoItem icon={CreditCard} label="Instrument CCY" value={val(trade.instrumentCcy)} />
+                  <InfoItem icon={CreditCard} label="Instrument CCY" value={val(trade.i_instrumentCcy)} />
                   <Separator className="my-2" />
                   <SectionHeader title="Amounts" />
                   <InfoItem icon={Wallet} label="Collateral Amount" value={formatCurrency(trade.collateralAmount)} />
@@ -333,7 +332,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                     }>{formatCurrency(trade.fundingAmount)}</span>
                   } />
                   <InfoItem icon={Wallet} label="Funding (LCY)" value={formatCurrency(trade.fundingAmountLCY)} />
-                  <InfoItem icon={TrendingUp} label="Exposure" value={formatCurrency(trade.financingExposure)} />
+                  <InfoItem icon={TrendingUp} label="Cash Out" value={formatCurrency(trade.cashOut)} />
                   <InfoItem icon={CircleDollarSign} label="Cash Out" value={formatCurrency(trade.cashOut)} />
                 </div>
 
@@ -376,22 +375,22 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                   <InfoItem icon={Layers} label="Portfolio" value={val(trade.hmsPortfolio)} />
                   <InfoItem icon={BarChart3} label="SL1" value={val(trade.hmsSL1)} />
                   <InfoItem icon={BarChart3} label="SL2" value={val(trade.hmsSL2)} />
-                  <InfoItem icon={Layers} label="Book Category" value={val(trade.bookCategory)} />
+                  <InfoItem icon={Layers} label="Book Category" value={val(trade.hms_bookCategory)} />
                 </div>
 
                 <div className="rounded-lg border p-4">
                   <SectionHeader title="Trading" />
-                  <InfoItem icon={User} label="Trader" value={val(trade.primaryTrader)} />
-                  <InfoItem icon={MapPin} label="Location" value={val(trade.tradingLocation)} />
-                  <InfoItem icon={Globe} label="Region" value={val(trade.region)} />
-                  <InfoItem icon={Globe} label="Sub Region" value={val(trade.subRegion)} />
+                  <InfoItem icon={User} label="Trader" value={val(trade.hms_primaryTrader)} />
+                  <InfoItem icon={MapPin} label="Location" value={val(trade.hms_tradingLocation)} />
+                  <InfoItem icon={Globe} label="Region" value={val(trade.hms_region)} />
+                  <InfoItem icon={Globe} label="Sub Region" value={val(trade.hms_subRegion)} />
                 </div>
 
                 <div className="rounded-lg border p-4">
                   <SectionHeader title="Legal Entity" />
-                  <InfoItem icon={Building2} label="LE Name" value={val(trade.leName)} />
+                  <InfoItem icon={Building2} label="LE Name" value={val(trade.hms_leName)} />
                   <InfoItem icon={Hash} label="CP LEI" value={
-                    <span className="font-mono text-xs">{val(trade.counterpartyLei)}</span>
+                    <span className="font-mono text-xs">{val(trade.cp_lei)}</span>
                   } />
                 </div>
               </div>
