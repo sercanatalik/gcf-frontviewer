@@ -137,7 +137,11 @@ export function ConcentrationRisk() {
             )}
 
             {/* Horizontal bar chart */}
-            <ChartContainer config={chartConfig} className="h-56 w-full">
+            <ChartContainer
+              config={chartConfig}
+              className="w-full"
+              style={{ height: Math.max(200, data.items.length * 28) }}
+            >
               <BarChart
                 data={data.items}
                 layout="vertical"
@@ -149,6 +153,7 @@ export function ConcentrationRisk() {
                   type="category"
                   width={100}
                   tick={{ fontSize: 10 }}
+                  interval={0}
                   tickFormatter={(v: string) =>
                     v.length > 14 ? `${v.slice(0, 13)}…` : v
                   }

@@ -41,7 +41,7 @@ export function FutureChart({ fieldName, groupBy }: FutureChartProps) {
 
   if (error || chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[350px] text-muted-foreground text-sm">
+      <div className="flex items-center justify-center h-[450px] text-muted-foreground text-sm">
         {error ? "Failed to load data" : "No data available"}
       </div>
     )
@@ -49,7 +49,7 @@ export function FutureChart({ fieldName, groupBy }: FutureChartProps) {
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={350}>
+      <ResponsiveContainer width="100%" height={450}>
         <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
           <CartesianGrid vertical={false} className="stroke-border/50" />
           <XAxis
