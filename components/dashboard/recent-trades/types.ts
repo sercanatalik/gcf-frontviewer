@@ -45,6 +45,18 @@ export interface Trade {
   i_isinId: string
   i_bbgId: string
   i_ticker: string
+  i_tickId: string
+  i_palmsCode: string
+
+  // Instrument detail
+  i_issuerLei: string
+  i_outstandingAmt: number
+  i_country: string
+  i_region: string
+  i_industrySector: string
+  i_rating: string
+  i_collateralQuality: string
+  i_collateralType: string
 
   // Counterparty
   counterParty: string
@@ -56,6 +68,10 @@ export interface Trade {
   cp_lei: string
   i_countryOfRisk: string
   cp_country: string
+  cp_region: string
+  cp_countryIncorporation: string
+  cp_countryOperation: string
+  cp_treatsParent: string
 
   // Issuer
   i_issuerName: string

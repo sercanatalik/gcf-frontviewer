@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import {
   Dialog,
   DialogContent,
@@ -30,15 +31,20 @@ import {
   Banknote,
   BarChart3,
   BookOpen,
+  Braces,
   Building2,
   CalendarClock,
+  Check,
   CircleDollarSign,
+  Copy,
   CreditCard,
+  Eye,
   FileText,
   Globe,
   Hash,
   Landmark,
   Layers,
+  Loader2,
   MapPin,
   Percent,
   Scale,
@@ -49,6 +55,9 @@ import {
   Wallet,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { basePath } from "@/lib/utils"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { JsonViewer } from "@/components/ui/json-viewer"
 import type { Trade } from "./types"
 import { getInitials, formatCurrency, formatSpread, daysUntilRaw } from "./utils"
 
@@ -119,6 +128,17 @@ function SectionHeader({ title }: { title: string }) {
 }
 
 export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDialogProps) {
+  const [goldeneyeData, setGoldeneyeData] = React.useState<unknown>(null)
+  const [goldeneyeTradeId, setGoldeneyeTradeId] = React.useState<string | null>(null)
+
+  // Reset goldeneye cache when trade changes
+  React.useEffect(() => {
+    if (trade?.tradeId !== goldeneyeTradeId) {
+      setGoldeneyeData(null)
+      setGoldeneyeTradeId(null)
+    }
+  }, [trade?.tradeId, goldeneyeTradeId])
+
   if (!trade) return null
 
   const maturityDays = daysUntilRaw(trade.maturityDt)
@@ -228,8 +248,17 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="collateral">Collateral</TabsTrigger>
+              <TabsTrigger value="counterparty">Counterparty</TabsTrigger>
               <TabsTrigger value="funding">Funding & Risk</TabsTrigger>
               <TabsTrigger value="book">Book & Trading</TabsTrigger>
+              <TabsTrigger value="goldeneye" className="gap-1.5">
+                <Eye className="size-3" />
+                Goldeneye
+              </TabsTrigger>
+              <TabsTrigger value="json" className="gap-1.5">
+                <Braces className="size-3" />
+                JSON
+              </TabsTrigger>
             </TabsList>
 
             {/* --- Overview Tab --- */}
@@ -275,7 +304,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
 
             {/* --- Collateral Tab --- */}
             <TabsContent value="collateral" className="mt-4">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-3 gap-5">
                 <div className="rounded-lg border p-4">
                   <SectionHeader title="Security Details" />
                   <InfoItem icon={FileText} label="Description" value={val(trade.collateralDesc)} />
@@ -283,9 +312,13 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                   <InfoItem icon={Layers} label="Collateral Type" value={val(trade.collateralType)} />
                   <InfoItem icon={BarChart3} label="Instrument Type" value={val(trade.i_type)} />
                   <InfoItem icon={Building2} label="Issuer" value={val(trade.i_issuerName)} />
+                  <InfoItem icon={Hash} label="Issuer LEI" value={
+                    <span className="font-mono text-xs">{val(trade.i_issuerLei)}</span>
+                  } />
                   <Separator className="my-2" />
                   <InfoItem icon={Percent} label="Coupon" value={trade.i_coupon != null ? `${trade.i_coupon}%` : "N/A"} />
                   <InfoItem icon={CalendarClock} label="Instrument Maturity" value={formatDate(trade.i_maturityDt)} />
+                  <InfoItem icon={Wallet} label="Outstanding Amt" value={trade.i_outstandingAmt != null ? formatCurrency(trade.i_outstandingAmt) : "N/A"} />
                 </div>
 
                 <div className="rounded-lg border p-4">
@@ -299,6 +332,9 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                   <InfoItem icon={Hash} label="Ticker" value={
                     <span className="font-mono text-xs">{val(trade.i_ticker)}</span>
                   } />
+                  <InfoItem icon={Hash} label="PALMS Code" value={
+                    <span className="font-mono text-xs">{val(trade.i_palmsCode)}</span>
+                  } />
                   <Separator className="my-2" />
                   <InfoItem icon={CreditCard} label="Collateral CCY" value={val(trade.collatCurrency)} />
                   <InfoItem icon={CreditCard} label="Instrument CCY" value={val(trade.i_instrumentCcy)} />
@@ -306,6 +342,56 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                   <SectionHeader title="Amounts" />
                   <InfoItem icon={Wallet} label="Collateral Amount" value={formatCurrency(trade.collateralAmount)} />
                   <InfoItem icon={Wallet} label="Collateral (LCY)" value={formatCurrency(trade.collateralAmountLCY)} />
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <SectionHeader title="Geography & Quality" />
+                  <InfoItem icon={Globe} label="Region" value={val(trade.i_region)} />
+                  <InfoItem icon={MapPin} label="Country" value={val(trade.i_country)} />
+                  <InfoItem icon={MapPin} label="Country of Risk" value={val(trade.i_countryOfRisk)} />
+                  <Separator className="my-2" />
+                  <InfoItem icon={BarChart3} label="Industry Sector" value={val(trade.i_industrySector)} />
+                  <InfoItem icon={ShieldCheck} label="Rating" value={
+                    <Badge variant="secondary" className="text-[10px]">{val(trade.i_rating)}</Badge>
+                  } />
+                  <InfoItem icon={Shield} label="Collateral Quality" value={val(trade.i_collateralQuality)} />
+                  <InfoItem icon={Layers} label="Collateral Type (Instr)" value={val(trade.i_collateralType)} />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* --- Counterparty Tab --- */}
+            <TabsContent value="counterparty" className="mt-4">
+              <div className="grid grid-cols-3 gap-5">
+                <div className="rounded-lg border p-4">
+                  <SectionHeader title="Identity" />
+                  <InfoItem icon={Building2} label="Name" value={val(trade.counterParty)} />
+                  <InfoItem icon={User} label="Parent" value={val(trade.counterpartyParentName)} />
+                  <InfoItem icon={User} label="TREATS Parent" value={val(trade.cp_treatsParent)} />
+                  <InfoItem icon={Globe} label="Type" value={val(trade.cp_type)} />
+                  <InfoItem icon={Hash} label="LEI" value={
+                    <span className="font-mono text-xs">{val(trade.cp_lei)}</span>
+                  } />
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <SectionHeader title="Ratings" />
+                  <InfoItem icon={ShieldCheck} label="S&P" value={
+                    <Badge variant="secondary" className="text-[10px]">{val(trade.cp_ratingSnp)}</Badge>
+                  } />
+                  <InfoItem icon={ShieldCheck} label="Moody's" value={
+                    <Badge variant="secondary" className="text-[10px]">{val(trade.cp_ratingMoodys)}</Badge>
+                  } />
+                  <InfoItem icon={Shield} label="CRR" value={val(trade.cp_crr)} />
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <SectionHeader title="Geography" />
+                  <InfoItem icon={Globe} label="Region" value={val(trade.cp_region)} />
+                  <InfoItem icon={MapPin} label="Domicile" value={val(trade.cp_country)} />
+                  <InfoItem icon={MapPin} label="Country of Incorporation" value={val(trade.cp_countryIncorporation)} />
+                  <InfoItem icon={MapPin} label="Country of Operation" value={val(trade.cp_countryOperation)} />
+                  <InfoItem icon={MapPin} label="Country of Risk" value={val(trade.i_countryOfRisk)} />
                 </div>
               </div>
             </TabsContent>
@@ -395,6 +481,28 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
                 </div>
               </div>
             </TabsContent>
+
+            {/* --- Goldeneye Tab --- */}
+            <TabsContent value="goldeneye" className="mt-4">
+              <GoldeneyePanel
+                tradeId={trade.tradeId}
+                cachedData={goldeneyeData}
+                onDataLoaded={(data) => {
+                  setGoldeneyeData(data)
+                  setGoldeneyeTradeId(trade.tradeId)
+                }}
+              />
+            </TabsContent>
+
+            {/* --- JSON Tab --- */}
+            <TabsContent value="json" className="mt-4">
+              <div className="mb-3 flex justify-end">
+                <CopyJsonButton data={trade} />
+              </div>
+              <ScrollArea className="h-[400px]">
+                <JsonViewer data={trade} />
+              </ScrollArea>
+            </TabsContent>
           </Tabs>
         </div>
       </DialogContent>
@@ -448,4 +556,167 @@ function DateCard({
       </div>
     </div>
   )
+}
+
+function CopyJsonButton({ data }: { data: unknown }) {
+  const [copied, setCopied] = React.useState(false)
+
+  const handleCopy = React.useCallback(async () => {
+    await navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }, [data])
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="inline-flex items-center gap-1 rounded-md border border-border/60 bg-muted/50 px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+    >
+      {copied ? (
+        <>
+          <Check className="size-3 text-emerald-500" />
+          Copied
+        </>
+      ) : (
+        <>
+          <Copy className="size-3" />
+          Copy
+        </>
+      )}
+    </button>
+  )
+}
+
+const GOLDENEYE_MODELS = [
+  { value: "gem", label: "GEM" },
+  { value: "qml", label: "QML" },
+  { value: "ucon", label: "UCON" },
+] as const
+
+function GoldeneyePanel({
+  tradeId,
+  cachedData,
+  onDataLoaded,
+}: {
+  tradeId: string
+  cachedData: unknown
+  onDataLoaded: (data: unknown) => void
+}) {
+  const [model, setModel] = React.useState("gem")
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+
+  const handleFetch = React.useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(
+        `${basePath}/api/goldeneye?tradeId=${encodeURIComponent(tradeId)}&model=${model}`,
+      )
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `Request failed (${res.status})`)
+      }
+      const json = await res.json()
+      onDataLoaded(json)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error")
+    } finally {
+      setLoading(false)
+    }
+  }, [tradeId, model, onDataLoaded])
+
+  if (cachedData) {
+    return (
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-[10px] uppercase">{model}</Badge>
+            <span className="text-xs text-muted-foreground">Trade {tradeId}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CopyJsonButton data={cachedData} />
+            <button
+              onClick={() => onDataLoaded(null)}
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Re-fetch
+            </button>
+          </div>
+        </div>
+        <ScrollArea className="h-[400px]">
+          <JsonViewer data={cachedData} />
+        </ScrollArea>
+      </div>
+    )
+  }
+
+  if (!loading && !error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <div className="flex size-14 items-center justify-center rounded-full bg-muted">
+          <Eye className="size-6 text-muted-foreground" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium">Goldeneye Trade Lookup</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Fetch trade <span className="font-mono">{tradeId}</span> from Goldeneye
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {GOLDENEYE_MODELS.map((m) => (
+            <button
+              key={m.value}
+              onClick={() => setModel(m.value)}
+              className={cn(
+                "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                model === m.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={handleFetch}
+          className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          <Eye className="size-3.5" />
+          Fetch Trade
+        </button>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-16">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Fetching from Goldeneye ({model.toUpperCase()})...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-16">
+        <div className="flex size-14 items-center justify-center rounded-full bg-destructive/10">
+          <Eye className="size-6 text-destructive" />
+        </div>
+        <div className="text-center">
+          <p className="text-sm font-medium text-destructive">{error}</p>
+        </div>
+        <button
+          onClick={handleFetch}
+          className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted px-4 py-2 text-sm font-medium transition-colors hover:bg-muted/80"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
+  return null
 }
