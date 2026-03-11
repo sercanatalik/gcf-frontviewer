@@ -12,12 +12,14 @@ export interface FiltersState {
   filters: Filter[]
   activeTable: string
   asOfDate: string | null
+  chartGroupBy: string | undefined
 }
 
 export const filtersStore = new Store<FiltersState>({
   filters: [],
   activeTable: '',
   asOfDate: null,
+  chartGroupBy: undefined,
 })
 
 export const filtersActions = {
@@ -69,6 +71,13 @@ export const filtersActions = {
     filtersStore.setState((state) => ({
       ...state,
       asOfDate,
+    }))
+  },
+
+  setChartGroupBy: (chartGroupBy: string | undefined) => {
+    filtersStore.setState((state) => ({
+      ...state,
+      chartGroupBy,
     }))
   },
 }

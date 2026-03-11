@@ -38,9 +38,12 @@ app/
     distinct/              # Distinct values for filter dropdowns
     recent-trades/         # Individual trade records
     grouped-stats/         # Aggregated metrics by dimension
-    historical/            # Time-series historical data
-    future/                # Future maturity projections
+    historical/            # Time-series historical data (supports weighted fields)
+    future/                # Future maturity projections (supports weighted fields)
+    daily-summary/         # gcf_risk_mv grouped by asOfDate (Perspective datasource)
     tab-summary/           # Grouped summary for bottom tabs
+  api/goldeneye/           # Proxy to Goldeneye trade lookup service
+    route.ts               # GET ?tradeId=xxx&model=gem|qml|ucon
   dashboard/page.tsx       # Dashboard page
   workspace/               # Perspective workspace page
     page.tsx               # Workspace with WASM data grid
@@ -63,6 +66,7 @@ components/
     layout-presets.ts      # 7 preset layout definitions
     loading-screen.tsx     # WASM init progress indicator
   ui/                      # shadcn/ui primitives (20+ components)
+    json-viewer.tsx        # Collapsible JSON tree viewer with syntax highlighting
   query-provider.tsx       # TanStack React Query provider
   theme-provider.tsx       # next-themes provider (D key toggles theme)
   theme-toggle.tsx         # Manual theme switch button
@@ -109,12 +113,19 @@ types/perspective.d.ts     # Perspective type declarations
 - Tabbed interface: Historical (line/bar) and Future (grouped by maturity month)
 - Animated tab transitions with motion.div
 - Chart settings dropdown for field selection and group-by options
+- Fields: Cash Out, Funding Amount, Collateral Amount, Avg Spread (bps) (funding-weighted)
+- CSV download button exports current chart data
+- Dynamic Y-axis formatting (currency vs bps) based on selected field
 
 ### Recent Trades (`components/dashboard/recent-trades/`)
 - Dual tabs: Recent trades and Maturing Soon
 - Mini KPI stats: Net Funding, Collateral, Exposure, Avg Margin, Avg Haircut, PAY/REC ratio
 - Desk and region breakdowns with pills
 - Paginated trade list (9 items/page) with detail dialog modals
+- Trade detail dialog tabs: Overview, Collateral, Counterparty, Funding & Risk, Book & Trading, Goldeneye, JSON
+- Goldeneye tab: lazy-fetches trade from Goldeneye service (model selector: GEM/QML/UCON), displays in JSON viewer
+- JSON tab: full trade data model in collapsible JSON viewer
+- Copy-to-clipboard on both Goldeneye and JSON tabs
 
 ### Stats Row (`components/dashboard/stats-row/`)
 - Horizontal row of countable metrics (distinct trades, counterparties, desks, etc.)
@@ -136,6 +147,7 @@ types/perspective.d.ts     # Perspective type declarations
 - 4-phase initialization: init-wasm → fetch-schemas → load-tables → restore-layout
 - Global caching of WASM client and table data across soft navigations
 - Automatic type coercion (string, datetime, integer, float, boolean)
+- Virtual table `gcf_daily_summary` (gcf_risk_mv grouped by asOfDate: cashOut, fundingAmount, collateralAmount)
 - Perspective bug patches: command labels, maximize/restore buttons
 
 ### Layout System (`components/workspace/`)
@@ -173,7 +185,9 @@ types/perspective.d.ts     # Perspective type declarations
 | `GET /api/tables/grouped-stats` | Metrics aggregated by dimension |
 | `GET /api/tables/historical` | Time-series historical data |
 | `GET /api/tables/future` | Future maturity projections by month |
+| `GET /api/tables/daily-summary` | gcf_risk_mv aggregated by asOfDate (Perspective) |
 | `GET /api/tables/tab-summary` | Grouped summary for bottom tabs |
+| `GET /api/goldeneye` | Proxy to Goldeneye trade lookup (?tradeId, ?model) |
 
 ## Data Flow
 
@@ -195,5 +209,7 @@ types/perspective.d.ts     # Perspective type declarations
 - Table allowlist from `allowedTables` env var (defaults: gcf_risk_mv, gcf_hmsbooks, gcf_counterpart, gcf_trade)
 - Dark/light theme via next-themes with OKLch color variables; D key toggles theme
 - Animated header with TrueFocus glow effect
+- Weighted field support in historical/future routes (e.g. `weightedSpread` = `sum(fundingMargin * fundingAmount) / sum(fundingAmount)`)
 - BasePath configurable via `NEXT_PUBLIC_BASE_PATH` env (default: `/gcf-frontview`)
+- Goldeneye integration via `GOLDENEYE_URL` env (default: `http://goldeneye:3000`)
 - No test suite currently exists

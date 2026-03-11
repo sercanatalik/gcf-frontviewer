@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useCallback } from "react"
 import { LayoutGrid } from "lucide-react"
 import {
   Card,
@@ -16,6 +16,7 @@ import { tabs } from "./data"
 import { useBottomTabsData } from "./use-bottom-tabs-data"
 import { createColumns } from "./columns"
 import { DataTable } from "./data-table"
+import { filtersActions } from "@/lib/store/filters"
 
 export function BottomTabs() {
   const { data, isLoading } = useBottomTabsData(tabs)
@@ -25,10 +26,22 @@ export function BottomTabs() {
     [],
   )
 
+  const tabByKey = useMemo(
+    () => new Map(tabs.map((t) => [t.key, t])),
+    [],
+  )
+
+  const handleTabChange = useCallback((key: string) => {
+    const tab = tabByKey.get(key)
+    if (tab) {
+      filtersActions.setChartGroupBy(tab.groupBy)
+    }
+  }, [tabByKey])
+
   return (
     <Card>
       <CardContent>
-        <Tabs defaultValue={tabs[0]!.key}>
+        <Tabs defaultValue={tabs[0]!.key} onValueChange={handleTabChange}>
           <div className="flex items-center gap-2">
             <LayoutGrid className="size-4 text-chart-3" />
             <TabsList variant="line">

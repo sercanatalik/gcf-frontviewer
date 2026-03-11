@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChartBarStacked, History, CalendarClock, Download } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
+import { useStore } from "@tanstack/react-store"
 import { HistoricalChart } from "./historical-chart"
 import { FutureChart } from "./future-chart"
 import { ChartSettings } from "./chart-settings"
 import { useHistoricalData, useFutureData } from "./use-cashout-data"
 import { processHistoricalData, processFutureData } from "./utils"
+import { filtersStore, filtersActions } from "@/lib/store/filters"
 
 function downloadCsv(
   rows: Record<string, unknown>[],
@@ -41,7 +43,22 @@ function downloadCsv(
 export function CashOutChart() {
   const [activeTab, setActiveTab] = React.useState("historical")
   const [fieldName, setFieldName] = React.useState("cashOut")
-  const [groupBy, setGroupBy] = React.useState<string | undefined>(undefined)
+  const storeGroupBy = useStore(filtersStore, (s) => s.chartGroupBy)
+  const [localGroupBy, setLocalGroupBy] = React.useState<string | undefined>(undefined)
+
+  // Sync from store when bottom tabs change
+  React.useEffect(() => {
+    if (storeGroupBy !== undefined) {
+      setLocalGroupBy(storeGroupBy)
+    }
+  }, [storeGroupBy])
+
+  const groupBy = localGroupBy
+
+  const setGroupBy = React.useCallback((value: string | undefined) => {
+    setLocalGroupBy(value)
+    filtersActions.setChartGroupBy(value)
+  }, [])
 
   const { data: historicalData } = useHistoricalData(fieldName, groupBy)
   const { data: futureData } = useFutureData(fieldName, groupBy)
