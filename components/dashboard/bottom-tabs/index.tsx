@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { LayoutGrid } from "lucide-react"
 import {
   Card,
@@ -17,8 +18,10 @@ import { useBottomTabsData } from "./use-bottom-tabs-data"
 import { createColumns } from "./columns"
 import { DataTable } from "./data-table"
 import { filtersActions } from "@/lib/store/filters"
+import type { TabRow } from "./use-bottom-tabs-data"
 
 export function BottomTabs() {
+  const router = useRouter()
   const { data, isLoading } = useBottomTabsData(tabs)
 
   const columnsByTab = useMemo(
@@ -58,6 +61,14 @@ export function BottomTabs() {
                 columns={columnsByTab[tab.key]!}
                 data={data[tab.key] ?? []}
                 isLoading={isLoading}
+                onRowClick={(row: TabRow) => {
+                  const params = new URLSearchParams({
+                    field: tab.groupBy,
+                    value: row.group,
+                    label: row.group,
+                  })
+                  router.push(`/dashboard/deep-dive?${params}`)
+                }}
               />
             </TabsContent>
           ))}
