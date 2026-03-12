@@ -40,27 +40,32 @@ export function processHistoricalData(
     (k) => k !== "asofDate" && k !== fieldName,
   )
 
-  // Group by week, taking the last snapshot (latest asofDate) in each week
+  // Group by month, computing average across daily snapshots
   if (!groupByField) {
-    const byWeek: Record<string, { value: number; lastDate: string }> = {}
+    const byMonth: Record<string, { sum: number; count: number; lastDate: string }> = {}
     for (const item of data) {
       const d = String(item.asofDate)
-      const w = toWeek(d)
-      const existing = byWeek[w]
-      if (!existing || d > existing.lastDate) {
-        byWeek[w] = { value: Number(item[fieldName] || 0), lastDate: d }
+      const m = toMonth(d)
+      const v = Number(item[fieldName] || 0)
+      const existing = byMonth[m]
+      if (existing) {
+        existing.sum += v
+        existing.count += 1
+        if (d > existing.lastDate) existing.lastDate = d
+      } else {
+        byMonth[m] = { sum: v, count: 1, lastDate: d }
       }
     }
-    return Object.entries(byWeek)
-      .map(([, { value, lastDate }]) => ({
-        date: fmtDay(lastDate),
+    return Object.entries(byMonth)
+      .map(([, { sum, count, lastDate }]) => ({
+        date: fmtDate(lastDate),
         fullDate: lastDate,
-        Total: value,
+        Total: sum / count,
       }))
       .sort(byDate)
   }
 
-  // Grouped: collect all rows per date, then pick the last date per week
+  // Grouped: collect all rows per date, then average by month
   const byDate_: Record<string, Record<string, number>> = {}
   const totals: Record<string, number> = {}
 
@@ -74,11 +79,16 @@ export function processHistoricalData(
     totals[g] = (totals[g] || 0) + Math.abs(v)
   }
 
-  // Pick last date per week
-  const weekLastDate: Record<string, string> = {}
+  // Average per month: sum each group's daily values, divide by days in that month
+  const monthGroups: Record<string, { sums: Record<string, number>; count: number; lastDate: string }> = {}
   for (const d of Object.keys(byDate_).sort()) {
-    const w = toWeek(d)
-    weekLastDate[w] = d
+    const m = toMonth(d)
+    const entry = (monthGroups[m] ??= { sums: {}, count: 0, lastDate: d })
+    entry.count += 1
+    if (d > entry.lastDate) entry.lastDate = d
+    for (const [g, v] of Object.entries(byDate_[d]!)) {
+      entry.sums[g] = (entry.sums[g] || 0) + v
+    }
   }
 
   const top5 = Object.entries(totals)
@@ -86,14 +96,14 @@ export function processHistoricalData(
     .slice(0, 5)
     .map(([k]) => k)
 
-  return Object.values(weekLastDate)
-    .map((d) => {
-      const groups = byDate_[d]!
-      const point: Record<string, unknown> = { date: fmtDay(d), fullDate: d }
+  return Object.values(monthGroups)
+    .map(({ sums, count, lastDate }) => {
+      const point: Record<string, unknown> = { date: fmtDate(lastDate), fullDate: lastDate }
       let others = 0
-      for (const [k, v] of Object.entries(groups)) {
-        if (top5.includes(k)) point[k] = v
-        else others += v
+      for (const [k, v] of Object.entries(sums)) {
+        const avg = v / count
+        if (top5.includes(k)) point[k] = avg
+        else others += avg
       }
       if (others !== 0) point["Others"] = others
       return point as { date: string; fullDate: string }
@@ -175,14 +185,6 @@ function fmtDate(d: string): string {
 
 function fmtDay(d: string): string {
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-}
-
-function toWeek(d: string): string {
-  const date = new Date(d)
-  const day = date.getDay()
-  const monday = new Date(date)
-  monday.setDate(date.getDate() - ((day + 6) % 7))
-  return monday.toISOString().slice(0, 10)
 }
 
 function toMonth(d: string): string {

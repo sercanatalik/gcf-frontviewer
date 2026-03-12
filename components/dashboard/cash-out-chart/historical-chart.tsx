@@ -23,9 +23,10 @@ import { ChartSkeleton } from "./chart-skeleton"
 interface HistoricalChartProps {
   fieldName: string
   groupBy?: string
+  height?: number
 }
 
-export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
+export function HistoricalChart({ fieldName, groupBy, height = 400 }: HistoricalChartProps) {
   const { data, isLoading, error } = useHistoricalData(fieldName, groupBy)
 
   const chartData = useMemo(
@@ -41,7 +42,7 @@ export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
 
   if (error || chartData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[450px] text-muted-foreground text-sm">
+      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
         {error ? "Failed to load data" : "No data available"}
       </div>
     )
@@ -49,7 +50,7 @@ export function HistoricalChart({ fieldName, groupBy }: HistoricalChartProps) {
 
   return (
     <div>
-      <ResponsiveContainer width="100%" height={450}>
+      <ResponsiveContainer width="100%" height={height}>
         <BarChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
           <CartesianGrid vertical={false} className="stroke-border/50" />
           <XAxis
