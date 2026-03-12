@@ -3,14 +3,10 @@ import { useFiltersParam } from "@/hooks/use-filters-param"
 import { basePath } from "@/lib/utils"
 import type { ConcentrationData } from "@/components/dashboard/concentration-risk/use-concentration-data"
 
-export type CollateralDimension = "collateralDesc" | "i_issuerName" | "collatCurrency" | "collateralType"
-
-export const DIMENSION_OPTIONS: { value: CollateralDimension; label: string }[] = [
-  { value: "collateralDesc", label: "Security" },
-  { value: "i_issuerName", label: "Issuer" },
-  { value: "collatCurrency", label: "Currency" },
-  { value: "collateralType", label: "Type" },
-]
+export type { CollateralDimension } from "@/lib/field-defs"
+export { COLLATERAL_DIMENSION_OPTIONS as DIMENSION_OPTIONS, COLLATERAL_MEASURE_FIELD } from "@/lib/field-defs"
+import type { CollateralDimension } from "@/lib/field-defs"
+import { COLLATERAL_MEASURE_FIELD } from "@/lib/field-defs"
 
 async function fetchCollateralConcentration(
   filtersParam: string,
@@ -18,7 +14,7 @@ async function fetchCollateralConcentration(
 ): Promise<ConcentrationData> {
   const params = new URLSearchParams({
     groupBy: dimension,
-    field: "collateralAmount",
+    field: COLLATERAL_MEASURE_FIELD,
     topN: "10",
   })
   if (filtersParam) params.set("filters", filtersParam)

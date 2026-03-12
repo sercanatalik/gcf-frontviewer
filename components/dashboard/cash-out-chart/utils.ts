@@ -1,9 +1,4 @@
-export const FIELD_OPTIONS = [
-  { value: "cashOut", label: "Cash Out" },
-  { value: "fundingAmount", label: "Funding Amount" },
-  { value: "collateralAmount", label: "Collateral Amount" },
-  { value: "weightedSpread", label: "Avg Spread (bps)" },
-]
+export { CHART_FIELD_OPTIONS as FIELD_OPTIONS } from "@/lib/field-defs"
 
 export const CHART_COLORS = [
   "hsl(217, 91%, 60%)",
