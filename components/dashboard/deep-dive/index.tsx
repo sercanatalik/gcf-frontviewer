@@ -28,18 +28,11 @@ import { FutureChart } from "@/components/dashboard/cash-out-chart/future-chart"
 import { ChartSkeleton } from "@/components/dashboard/cash-out-chart/chart-skeleton"
 import { filtersStore, filtersActions } from "@/lib/store/filters"
 import { serializeFilters } from "@/lib/filters/serialize"
+import { deepDiveMeasures, DEEP_DIVE_BREAKDOWN_DIMENSIONS, DEFAULT_RELATIVE_DAYS } from "@/lib/field-defs"
 
-const DEEP_DIVE_MEASURES: KpiMeasure[] = [
-  { key: "cashOut", label: "Cash Out", field: "cashOut", aggregation: "sum", formatter: "currency" },
-  { key: "fundingAmount", label: "Funding Amount", field: "fundingAmount", aggregation: "sum", formatter: "currency" },
-  { key: "collateralAmount", label: "Collateral", field: "collateralAmount", aggregation: "sum", formatter: "currency" },
-  { key: "avgSpread", label: "Avg Spread", field: "fundingMargin", aggregation: "avgBy", weightField: "fundingAmount", formatter: "bps" },
-  { key: "avgMaturity", label: "Avg Maturity", field: "dtm", aggregation: "avgBy", weightField: "fundingAmount", formatter: "days" },
-  { key: "tradeCount", label: "Trades", field: "tradeId", aggregation: "countDistinct", formatter: "count" },
-  { key: "cpCount", label: "Counterparties", field: "counterParty", aggregation: "countDistinct", formatter: "count" },
-]
+const DEEP_DIVE_MEASURES = deepDiveMeasures
 
-const RELATIVE_DAYS = 180
+const RELATIVE_DAYS = DEFAULT_RELATIVE_DAYS
 
 interface DeepDiveContentProps {
   field: string
@@ -138,14 +131,18 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
 
   // Sub-breakdowns: pick dimensions that aren't the current one
   const breakdownDimensions = React.useMemo(() => {
-    const dims = [
-      { groupBy: "hmsDesk", label: "By Desk", icon: Building2 },
-      { groupBy: "counterpartyParentName", label: "By Client", icon: Users },
-      { groupBy: "productType", label: "By Product", icon: BarChart3 },
-      { groupBy: "hms_region", label: "By Region", icon: Globe },
-      { groupBy: "collateralType", label: "By Collateral", icon: Banknote },
-      { groupBy: "collatCurrency", label: "By Currency", icon: Banknote },
-    ]
+    const iconMap: Record<string, typeof Building2> = {
+      hmsDesk: Building2,
+      counterpartyParentName: Users,
+      productType: BarChart3,
+      hms_region: Globe,
+      collateralType: Banknote,
+      collatCurrency: Banknote,
+    }
+    const dims = DEEP_DIVE_BREAKDOWN_DIMENSIONS.map((d) => ({
+      ...d,
+      icon: iconMap[d.groupBy] ?? BarChart3,
+    }))
     return dims.filter((d) => d.groupBy !== field).slice(0, 4)
   }, [field])
 

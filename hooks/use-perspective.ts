@@ -1,13 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import type { HTMLPerspectiveWorkspaceElement } from "@perspective-dev/workspace"
-import { useStore } from "@tanstack/react-store"
 import type { LoadingProgress, EnrichedTableInfo } from "@/lib/types"
 import { fetchTables, fetchAllTableData, fetchDailySummary } from "@/lib/api"
-import { filtersStore } from "@/lib/store/filters"
-import { serializeFilters } from "@/lib/filters/serialize"
 import type { SerializedFilter } from "@/lib/filters/serialize"
+import { useFiltersParam } from "@/hooks/use-filters-param"
 import { basePath } from "@/lib/utils"
 
 const STORAGE_KEY = "perspective-workspace-state"
@@ -129,8 +127,7 @@ export function usePerspective(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef = useRef<any>(null)
   const tablesRef = useRef<EnrichedTableInfo[]>([])
-  const filters = useStore(filtersStore, (s) => s.filters)
-  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
+  const filtersParam = useFiltersParam()
 
   useEffect(() => {
 

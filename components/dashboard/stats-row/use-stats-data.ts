@@ -1,8 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useStore } from "@tanstack/react-store"
-import { useMemo } from "react"
-import { filtersStore } from "@/lib/store/filters"
-import { serializeFilters } from "@/lib/filters/serialize"
+import { useFiltersParam } from "@/hooks/use-filters-param"
 import { basePath } from "@/lib/utils"
 import type { StatMeasure, StatData } from "./types"
 
@@ -29,8 +26,7 @@ async function fetchStatsSummary(
 }
 
 export function useStatsData(measures: StatMeasure[], relativeDays: number) {
-  const filters = useStore(filtersStore, (s) => s.filters)
-  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
+  const filtersParam = useFiltersParam()
 
   return useQuery({
     queryKey: ["stats-summary", measures.map((m) => m.key), relativeDays, filtersParam],

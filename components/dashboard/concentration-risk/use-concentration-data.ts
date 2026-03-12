@@ -1,8 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useStore } from "@tanstack/react-store"
-import { useMemo } from "react"
-import { filtersStore } from "@/lib/store/filters"
-import { serializeFilters } from "@/lib/filters/serialize"
+import { useFiltersParam } from "@/hooks/use-filters-param"
 import { basePath } from "@/lib/utils"
 
 export interface ConcentrationItem {
@@ -20,14 +17,10 @@ export interface ConcentrationData {
   items: ConcentrationItem[]
 }
 
-export type CounterpartyDimension = "counterpartyParentName" | "hms_region" | "i_countryOfRisk" | "cp_type"
-
-export const COUNTERPARTY_DIMENSION_OPTIONS: { value: CounterpartyDimension; label: string }[] = [
-  { value: "counterpartyParentName", label: "Name" },
-  { value: "hms_region", label: "Region" },
-  { value: "i_countryOfRisk", label: "Country" },
-  { value: "cp_type", label: "Type" },
-]
+export type { CounterpartyDimension } from "@/lib/field-defs"
+export { COUNTERPARTY_DIMENSION_OPTIONS, COUNTERPARTY_MEASURE_FIELD } from "@/lib/field-defs"
+import type { CounterpartyDimension } from "@/lib/field-defs"
+import { COUNTERPARTY_MEASURE_FIELD } from "@/lib/field-defs"
 
 async function fetchConcentration(
   filtersParam: string,
@@ -35,7 +28,7 @@ async function fetchConcentration(
 ): Promise<ConcentrationData> {
   const params = new URLSearchParams({
     groupBy: dimension,
-    field: "fundingAmount",
+    field: COUNTERPARTY_MEASURE_FIELD,
     topN: "10",
   })
   if (filtersParam) params.set("filters", filtersParam)
@@ -46,8 +39,7 @@ async function fetchConcentration(
 }
 
 export function useConcentrationData(dimension: CounterpartyDimension) {
-  const filters = useStore(filtersStore, (s) => s.filters)
-  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
+  const filtersParam = useFiltersParam()
 
   return useQuery({
     queryKey: ["concentration", dimension, filtersParam],
