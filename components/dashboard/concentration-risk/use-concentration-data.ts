@@ -20,9 +20,21 @@ export interface ConcentrationData {
   items: ConcentrationItem[]
 }
 
-async function fetchConcentration(filtersParam: string): Promise<ConcentrationData> {
+export type CounterpartyDimension = "counterpartyParentName" | "hms_region" | "i_countryOfRisk" | "cp_type"
+
+export const COUNTERPARTY_DIMENSION_OPTIONS: { value: CounterpartyDimension; label: string }[] = [
+  { value: "counterpartyParentName", label: "Name" },
+  { value: "hms_region", label: "Region" },
+  { value: "i_countryOfRisk", label: "Country" },
+  { value: "cp_type", label: "Type" },
+]
+
+async function fetchConcentration(
+  filtersParam: string,
+  dimension: CounterpartyDimension,
+): Promise<ConcentrationData> {
   const params = new URLSearchParams({
-    groupBy: "counterpartyParentName",
+    groupBy: dimension,
     field: "fundingAmount",
     topN: "10",
   })
@@ -33,13 +45,13 @@ async function fetchConcentration(filtersParam: string): Promise<ConcentrationDa
   return res.json()
 }
 
-export function useConcentrationData() {
+export function useConcentrationData(dimension: CounterpartyDimension) {
   const filters = useStore(filtersStore, (s) => s.filters)
   const filtersParam = useMemo(() => serializeFilters(filters), [filters])
 
   return useQuery({
-    queryKey: ["concentration", filtersParam],
-    queryFn: () => fetchConcentration(filtersParam),
+    queryKey: ["concentration", dimension, filtersParam],
+    queryFn: () => fetchConcentration(filtersParam, dimension),
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   })

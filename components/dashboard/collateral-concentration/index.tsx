@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { AlertTriangle, Layers, Loader2 } from "lucide-react"
+import { AlertTriangle, Info, Layers, Loader2 } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -23,6 +23,12 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   useCollateralConcentration,
   DIMENSION_OPTIONS,
@@ -114,17 +120,27 @@ export function CollateralConcentration() {
           <>
             {/* Summary metrics */}
             <div className="grid grid-cols-3 gap-2">
-              <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-3 py-2">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  HHI Score
-                </span>
-                <span className={`text-lg font-bold tabular-nums ${level!.textColor}`}>
-                  {(data.hhi * 10000).toFixed(0)}
-                </span>
-                <span className={`text-[10px] font-medium ${level!.textColor}`}>
-                  {level!.label}
-                </span>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex cursor-help flex-col items-center rounded-lg border bg-muted/30 px-3 py-2">
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wide">
+                        HHI Score
+                        <Info className="size-2.5" />
+                      </span>
+                      <span className={`text-lg font-bold tabular-nums ${level!.textColor}`}>
+                        {(data.hhi * 10000).toFixed(0)}
+                      </span>
+                      <span className={`text-[10px] font-medium ${level!.textColor}`}>
+                        {level!.label}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-64 text-pretty">
+                    Herfindahl-Hirschman Index — sum of squared exposure shares (s_i/total)^2 across all groups, scaled to 0–10,000. Below 1,500 is low, 1,500–2,500 moderate, above 2,500 high concentration.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-3 py-2">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
                   Top {data.topN} Share

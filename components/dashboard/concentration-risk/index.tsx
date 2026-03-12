@@ -9,7 +9,8 @@ import {
   YAxis,
   ResponsiveContainer,
 } from "recharts"
-import { AlertTriangle, Loader2, Shield, Users } from "lucide-react"
+import { useState } from "react"
+import { AlertTriangle, Info, Loader2, Shield, Users } from "lucide-react"
 import {
   Card,
   CardContent,
@@ -23,7 +24,17 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { useConcentrationData } from "./use-concentration-data"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
+  useConcentrationData,
+  COUNTERPARTY_DIMENSION_OPTIONS,
+  type CounterpartyDimension,
+} from "./use-concentration-data"
 
 function formatCurrency(value: number): string {
   if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
@@ -61,20 +72,41 @@ const chartConfig: ChartConfig = {
 }
 
 export function ConcentrationRisk() {
-  const { data, isLoading, error } = useConcentrationData()
+  const [dimension, setDimension] = useState<CounterpartyDimension>("counterpartyParentName")
+  const { data, isLoading, error } = useConcentrationData(dimension)
 
   const level = data ? hhiLevel(data.hhi) : null
+  const dimensionLabel = COUNTERPARTY_DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label ?? "Name"
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="px-4 pt-4 pb-2">
-        <CardTitle className="flex items-center gap-2 text-sm">
-          <Shield className="size-4" />
-          Counterparty Concentration
-        </CardTitle>
-        <CardDescription className="text-xs">
-          Top counterparty exposure & diversification
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Shield className="size-4" />
+              Counterparty Concentration
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Top counterparty exposure by {dimensionLabel.toLowerCase()}
+            </CardDescription>
+          </div>
+          <div className="flex rounded-md border bg-muted/50 p-0.5 text-[10px]">
+            {COUNTERPARTY_DIMENSION_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setDimension(opt.value)}
+                className={`rounded-sm px-2 py-0.5 transition-colors ${
+                  dimension === opt.value
+                    ? "bg-background font-medium shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 pb-4">
         {isLoading ? (
@@ -89,17 +121,27 @@ export function ConcentrationRisk() {
           <>
             {/* Summary metrics */}
             <div className="grid grid-cols-3 gap-2">
-              <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-3 py-2">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  HHI Score
-                </span>
-                <span className={`text-lg font-bold tabular-nums ${level!.textColor}`}>
-                  {(data.hhi * 10000).toFixed(0)}
-                </span>
-                <span className={`text-[10px] font-medium ${level!.textColor}`}>
-                  {level!.label}
-                </span>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex cursor-help flex-col items-center rounded-lg border bg-muted/30 px-3 py-2">
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase tracking-wide">
+                        HHI Score
+                        <Info className="size-2.5" />
+                      </span>
+                      <span className={`text-lg font-bold tabular-nums ${level!.textColor}`}>
+                        {(data.hhi * 10000).toFixed(0)}
+                      </span>
+                      <span className={`text-[10px] font-medium ${level!.textColor}`}>
+                        {level!.label}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-64 text-pretty">
+                    Herfindahl-Hirschman Index — sum of squared exposure shares (s_i/total)^2 across all groups, scaled to 0–10,000. Below 1,500 is low, 1,500–2,500 moderate, above 2,500 high concentration.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-3 py-2">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
                   Top {data.topN} Share
@@ -113,7 +155,7 @@ export function ConcentrationRisk() {
               </div>
               <div className="flex flex-col items-center rounded-lg border bg-muted/30 px-3 py-2">
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                  Counterparties
+                  Distinct {dimensionLabel}s
                 </span>
                 <div className="flex items-center gap-1">
                   <Users className="size-3.5 text-muted-foreground" />
