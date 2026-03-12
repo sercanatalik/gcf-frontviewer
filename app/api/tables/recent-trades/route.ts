@@ -23,6 +23,9 @@ export async function GET(request: NextRequest) {
       clauses.push("gcf_risk_mv.asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
     }
 
+    // Exclude trades with zero cash out
+    clauses.push("toFloat64OrZero(toString(gcf_risk_mv.cashOut)) != 0")
+
     // Date window: for maturity mode, only future maturities within N days
     if (sortMode === "maturity") {
       clauses.push("gcf_risk_mv.maturityDt >= gcf_risk_mv.asofDate")
