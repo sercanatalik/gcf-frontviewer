@@ -29,10 +29,8 @@ import {
   TrendingUp,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
-import { useStore } from "@tanstack/react-store"
 import { cn, basePath } from "@/lib/utils"
-import { filtersStore } from "@/lib/store/filters"
-import { serializeFilters } from "@/lib/filters/serialize"
+import { useFiltersParam } from "@/hooks/use-filters-param"
 import type { Trade } from "./types"
 import { TradeItem } from "./trade-item"
 import { TradeDetailDialog } from "./trade-detail-dialog"
@@ -127,8 +125,7 @@ export function RecentTrades() {
   const [page, setPage] = useState(0)
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
 
-  const filters = useStore(filtersStore, (s) => s.filters)
-  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
+  const filtersParam = useFiltersParam()
 
   const { data: recentTrades = [], isLoading: recentLoading } = useQuery({
     queryKey: ["recent-trades", "recent", filtersParam],

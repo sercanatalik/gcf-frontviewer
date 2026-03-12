@@ -1,8 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
-import { useStore } from "@tanstack/react-store"
-import { useMemo } from "react"
-import { filtersStore } from "@/lib/store/filters"
-import { serializeFilters } from "@/lib/filters/serialize"
+import { useFiltersParam } from "@/hooks/use-filters-param"
 import { basePath } from "@/lib/utils"
 
 export interface ConcentrationItem {
@@ -46,8 +43,7 @@ async function fetchConcentration(
 }
 
 export function useConcentrationData(dimension: CounterpartyDimension) {
-  const filters = useStore(filtersStore, (s) => s.filters)
-  const filtersParam = useMemo(() => serializeFilters(filters), [filters])
+  const filtersParam = useFiltersParam()
 
   return useQuery({
     queryKey: ["concentration", dimension, filtersParam],
