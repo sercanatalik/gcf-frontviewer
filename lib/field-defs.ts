@@ -220,12 +220,28 @@ export const TRADE_COLUMNS = [
   F.accrualDaily, F.accrualProjected, F.accrualRealised,
 ] as const
 
+/** Reverse lookup: DB column → F key name (for aliasing in SELECT). */
+const _dbToKey: Record<string, string> = Object.fromEntries(
+  Object.entries(F).filter(([key, val]) => key !== val).map(([key, val]) => [val, key]),
+)
+
+/**
+ * Build a SQL SELECT expression from an array of DB column names.
+ * Applies date formatting and aliases renamed columns back to F key names
+ * so JSON responses use consistent property names.
+ */
+function buildSelectExpr(columns: readonly string[]): string {
+  return columns.map((col) => {
+    const alias = _dbToKey[col]
+    if (DATE_COLUMNS.has(col)) {
+      return `formatDateTime(${col}, '%Y-%m-%d') AS ${alias || col}`
+    }
+    return alias ? `${col} AS ${alias}` : col
+  }).join(", ")
+}
+
 /** SQL SELECT expression with date formatting applied. */
-export const TRADE_SELECT_EXPR = TRADE_COLUMNS.map((col) =>
-  DATE_COLUMNS.has(col)
-    ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
-    : col,
-).join(", ")
+export const TRADE_SELECT_EXPR = buildSelectExpr(TRADE_COLUMNS)
 
 /** Slim trade columns for activity comparison new-trades list. */
 export const NEW_TRADE_COLUMNS = [
@@ -236,11 +252,7 @@ export const NEW_TRADE_COLUMNS = [
 ] as const
 
 /** SQL SELECT for new-trades (14 columns vs 59 in TRADE_SELECT_EXPR). */
-export const NEW_TRADE_SELECT_EXPR = NEW_TRADE_COLUMNS.map((col) =>
-  DATE_COLUMNS.has(col)
-    ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
-    : col,
-).join(", ")
+export const NEW_TRADE_SELECT_EXPR = buildSelectExpr(NEW_TRADE_COLUMNS)
 
 // ---------------------------------------------------------------------------
 // 4. Allowed filter columns  (SQL injection allowlist)
@@ -400,24 +412,24 @@ export const bottomTabs: TabDef[] = [
 // 10. Concentration dimension options
 // ---------------------------------------------------------------------------
 
-export type CounterpartyDimension = "counterpartyParentName" | "hms_region" | "i_countryOfRisk" | "cp_type"
+export type CounterpartyDimension = string
 
 export const COUNTERPARTY_DIMENSION_OPTIONS: { value: CounterpartyDimension; label: string }[] = [
-  { value: F.counterpartyParentName as CounterpartyDimension, label: "Name" },
-  { value: F.hms_region             as CounterpartyDimension, label: "Region" },
-  { value: F.i_countryOfRisk       as CounterpartyDimension, label: "Country" },
-  { value: F.cp_type               as CounterpartyDimension, label: "Type" },
+  { value: "counterpartyParentName", label: "Name" },
+  { value: "hms_region", label: "Region" },
+  { value: "i_countryOfRisk", label: "Country" },
+  { value: "cp_type", label: "Type" },
 ]
 
 export const COUNTERPARTY_MEASURE_FIELD = F.fundingAmount
 
-export type CollateralDimension = "collateralDesc" | "i_issuerName" | "collatCurrency" | "collateralType"
+export type CollateralDimension = string
 
 export const COLLATERAL_DIMENSION_OPTIONS: { value: CollateralDimension; label: string }[] = [
-  { value: F.collateralDesc  as CollateralDimension, label: "Security" },
-  { value: F.i_issuerName    as CollateralDimension, label: "Issuer" },
-  { value: F.collatCurrency  as CollateralDimension, label: "Currency" },
-  { value: F.collateralType  as CollateralDimension, label: "Type" },
+  { value: "collateralDesc", label: "Security" },
+  { value: "i_issuerName", label: "Issuer" },
+  { value: "collatCurrency", label: "Currency" },
+  { value: "collateralType", label: "Type" },
 ]
 
 export const COLLATERAL_MEASURE_FIELD = F.collateralAmount
