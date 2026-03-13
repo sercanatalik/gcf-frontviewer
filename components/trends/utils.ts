@@ -1,12 +1,12 @@
 export const TREND_COLORS = [
-  "oklch(0.70 0.15 250)",
-  "oklch(0.60 0.20 200)",
-  "oklch(0.65 0.18 150)",
-  "oklch(0.55 0.22 300)",
-  "oklch(0.72 0.12 50)",
-  "oklch(0.50 0.20 270)",
-  "oklch(0.68 0.14 100)",
-  "oklch(0.58 0.16 350)",
+  "hsl(217, 91%, 60%)",
+  "hsl(221, 83%, 53%)",
+  "hsl(224, 76%, 48%)",
+  "hsl(226, 71%, 40%)",
+  "hsl(217, 60%, 68%)",
+  "hsl(210, 70%, 55%)",
+  "hsl(230, 65%, 58%)",
+  "hsl(215, 50%, 62%)",
 ]
 
 export function formatValue(value: number, formatter: string): string {

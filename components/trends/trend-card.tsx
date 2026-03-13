@@ -163,9 +163,9 @@ export function TrendCard({ card }: TrendCardProps) {
                 className={cn(
                   "text-[10px] font-medium tabular-nums",
                   summary.change > 0
-                    ? "text-emerald-600 dark:text-emerald-400"
+                    ? "text-emerald-500"
                     : summary.change < 0
-                      ? "text-red-500"
+                      ? "text-red-400"
                       : "text-muted-foreground",
                 )}
               >
