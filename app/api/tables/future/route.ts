@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { WEIGHTED_FIELDS } from "@/lib/field-defs"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
-
-const WEIGHTED_FIELDS: Record<string, { numerator: string; weight: string }> = {
-  weightedSpread: { numerator: "fundingMargin", weight: "fundingAmount" },
-}
 
 /**
  * Extract asofDate from serialised filters so we can handle it specially.

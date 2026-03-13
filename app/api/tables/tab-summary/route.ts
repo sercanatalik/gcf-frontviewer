@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { F, TAB_SUMMARY_MEASURES } from "@/lib/field-defs"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
 
@@ -28,16 +29,18 @@ export async function GET(request: NextRequest) {
     }
     const whereStr = `WHERE ${clauses.join(" AND ")}`
 
+    const m = TAB_SUMMARY_MEASURES
+
     const query = `
       SELECT
         ${groupBy} AS group,
         count() AS trades,
-        sum(toFloat64OrZero(toString(cashOut))) AS cash_out,
-        sum(toFloat64OrZero(toString(fundingAmount))) AS funding_amount,
-        sum(toFloat64OrZero(toString(collateralAmount))) AS collateral_amount,
-        sum(toFloat64OrZero(toString(fundingMargin)) * toFloat64OrZero(toString(fundingAmount)))
-          / nullIf(sum(toFloat64OrZero(toString(fundingAmount))), 0) AS avg_spread,
-        avg(toFloat64OrZero(toString(dtm))) AS avg_dtm
+        sum(toFloat64OrZero(toString(${m.cashOut}))) AS cash_out,
+        sum(toFloat64OrZero(toString(${m.fundingAmount}))) AS funding_amount,
+        sum(toFloat64OrZero(toString(${m.collateralAmount}))) AS collateral_amount,
+        sum(toFloat64OrZero(toString(${m.fundingMargin})) * toFloat64OrZero(toString(${m.fundingAmount})))
+          / nullIf(sum(toFloat64OrZero(toString(${m.fundingAmount}))), 0) AS avg_spread,
+        avg(toFloat64OrZero(toString(${m.dtm}))) AS avg_dtm
       FROM gcf_risk_mv
       ${whereStr}
       GROUP BY ${groupBy}

@@ -344,3 +344,116 @@ export const DEEP_DIVE_BREAKDOWN_DIMENSIONS = [
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_RELATIVE_DAYS = 180
+
+// ---------------------------------------------------------------------------
+// 13. Weighted field definitions  (historical / future chart routes)
+// ---------------------------------------------------------------------------
+
+export const WEIGHTED_FIELDS: Record<string, { numerator: string; weight: string }> = {
+  weightedSpread: { numerator: F.fundingMargin, weight: F.fundingAmount },
+}
+
+// ---------------------------------------------------------------------------
+// 14. Trade search columns  (trades route full-text search)
+// ---------------------------------------------------------------------------
+
+export const SEARCH_COLUMNS = [
+  F.counterParty,
+  F.collateralDesc,
+  F.i_ticker,
+  F.hmsDesk,
+  F.productType,
+  F.tradeId,
+  F.i_issuerName,
+  F.hms_region,
+  F.i_isinId,
+  F.counterpartyParentName,
+] as const
+
+// ---------------------------------------------------------------------------
+// 15. Trade sortable columns  (trades route ORDER BY allowlist)
+// ---------------------------------------------------------------------------
+
+export const SORTABLE_COLUMNS: Record<string, string> = {
+  [F.tradeDt]: F.tradeDt,
+  [F.maturityDt]: F.maturityDt,
+  [F.fundingAmount]: F.fundingAmount,
+  [F.collateralAmount]: F.collateralAmount,
+  [F.counterParty]: F.counterParty,
+  [F.hmsDesk]: F.hmsDesk,
+  [F.fundingMargin]: F.fundingMargin,
+  [F.fixedRate]: F.fixedRate,
+  [F.cashOut]: F.cashOut,
+}
+
+// ---------------------------------------------------------------------------
+// 16. Allowed time fields  (trends route x-axis)
+// ---------------------------------------------------------------------------
+
+export const ALLOWED_TIME_FIELDS: Record<string, string> = {
+  [F.tradeDt]: F.tradeDt,
+  [F.startDt]: F.startDt,
+  [F.maturityDt]: F.maturityDt,
+}
+
+// ---------------------------------------------------------------------------
+// 17. Allowed aggregation types
+// ---------------------------------------------------------------------------
+
+export const ALLOWED_AGGREGATIONS = ["sum", "avg", "count", "countDistinct", "avgBy"] as const
+
+export type AggregationType = (typeof ALLOWED_AGGREGATIONS)[number]
+
+// ---------------------------------------------------------------------------
+// 18. Daily summary fields  (Perspective datasource)
+// ---------------------------------------------------------------------------
+
+export const DAILY_SUMMARY_FIELDS = [F.cashOut, F.fundingAmount, F.collateralAmount] as const
+
+// ---------------------------------------------------------------------------
+// 19. Tab summary fields  (bottom tabs aggregation)
+// ---------------------------------------------------------------------------
+
+export const TAB_SUMMARY_MEASURES = {
+  cashOut: F.cashOut,
+  fundingAmount: F.fundingAmount,
+  collateralAmount: F.collateralAmount,
+  fundingMargin: F.fundingMargin,
+  dtm: F.dtm,
+} as const
+
+// ---------------------------------------------------------------------------
+// 20. Centralised aggregation expression builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Build a ClickHouse aggregation SQL expression.
+ *
+ * @param field       - column name to aggregate
+ * @param aggregation - aggregation type (sum, avg, count, countDistinct, avgBy)
+ * @param options.weightField - required when aggregation is "avgBy"
+ * @param options.alias       - optional SQL alias for the expression
+ */
+export function buildAggExpr(
+  field: string,
+  aggregation: string,
+  options?: { weightField?: string; alias?: string },
+): string {
+  const { weightField, alias } = options ?? {}
+
+  let expr: string
+  if (aggregation === "avgBy") {
+    if (!weightField) throw new Error(`weightField required for avgBy on ${field}`)
+    expr = `sum(toFloat64OrZero(toString(${field})) * toFloat64OrZero(toString(${weightField}))) / nullIf(sum(toFloat64OrZero(toString(${weightField}))), 0)`
+  } else if (aggregation === "countDistinct") {
+    expr = `countDistinct(${field})`
+  } else if (aggregation === "count") {
+    expr = `count()`
+  } else if (["sum", "avg", "max", "min"].includes(aggregation)) {
+    expr = `${aggregation}(toFloat64OrZero(toString(${field})))`
+  } else {
+    expr = `${aggregation}(${field})`
+  }
+
+  return alias ? `${expr} as ${alias}` : expr
+}
