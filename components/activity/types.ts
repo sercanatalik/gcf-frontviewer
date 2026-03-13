@@ -42,7 +42,9 @@ export interface ActivityData {
   }
 }
 
+import type { FieldName } from "@/lib/field-defs"
+
 export interface DimensionOption {
-  value: string
+  value: FieldName
   label: string
 }

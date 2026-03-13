@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { F } from "@/lib/field-defs"
 import { useActivityData } from "./use-activity-data"
 import { SummaryCards } from "./summary-cards"
 import { TradeFlowCards } from "./trade-flow-cards"
@@ -19,14 +20,14 @@ import { ComparisonChart } from "./comparison-chart"
 import type { DimensionOption } from "./types"
 
 const DIMENSION_OPTIONS: DimensionOption[] = [
-  { value: "hms_region", label: "Region" },
-  { value: "hmsSL1", label: "Strategy (SL1)" },
-  { value: "hmsSL2", label: "Strategy (SL2)" },
-  { value: "hmsBook", label: "Book" },
-  { value: "hmsDesk", label: "Desk" },
-  { value: "productType", label: "Product Type" },
-  { value: "counterpartyParentName", label: "Counterparty" },
-  { value: "cp_type", label: "CP Type" },
+  { value: F.hms_region, label: "Region" },
+  { value: F.hmsSL1, label: "Strategy (SL1)" },
+  { value: F.hmsSL2, label: "Strategy (SL2)" },
+  { value: F.hmsBook, label: "Book" },
+  { value: F.hmsDesk, label: "Desk" },
+  { value: F.productType, label: "Product Type" },
+  { value: F.counterpartyParentName, label: "Counterparty" },
+  { value: F.cp_type, label: "CP Type" },
 ]
 
 const PERIOD_OPTIONS = [
@@ -58,7 +59,7 @@ function ErrorState({ error }: { error: Error }) {
 }
 
 export function ActivityComparison() {
-  const [groupBy, setGroupBy] = useState("hms_region")
+  const [groupBy, setGroupBy] = useState(F.hms_region)
   const [daysAgo, setDaysAgo] = useState(30)
 
   const { data, isLoading, error } = useActivityData(groupBy, daysAgo)
