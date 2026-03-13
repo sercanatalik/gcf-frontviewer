@@ -1,12 +1,5 @@
 export { CHART_FIELD_OPTIONS as FIELD_OPTIONS } from "@/lib/field-defs"
-
-export const CHART_COLORS = [
-  "hsl(217, 91%, 60%)",
-  "hsl(221, 83%, 53%)",
-  "hsl(224, 76%, 48%)",
-  "hsl(226, 71%, 40%)",
-  "hsl(217, 60%, 68%)",
-]
+export { CHART_COLORS } from "@/lib/chart-colors"
 
 import { sanitizeKey } from "@/lib/utils"
 export { sanitizeKey }

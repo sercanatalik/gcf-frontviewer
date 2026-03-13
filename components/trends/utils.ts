@@ -1,36 +1,8 @@
-export const TREND_COLORS = [
-  "hsl(217, 91%, 60%)",
-  "hsl(221, 83%, 53%)",
-  "hsl(224, 76%, 48%)",
-  "hsl(226, 71%, 40%)",
-  "hsl(217, 60%, 68%)",
-  "hsl(210, 70%, 55%)",
-  "hsl(230, 65%, 58%)",
-  "hsl(215, 50%, 62%)",
-]
+import { CHART_COLORS } from "@/lib/chart-colors"
 
-export function formatValue(value: number, formatter: string): string {
-  switch (formatter) {
-    case "currency": {
-      const sign = value < 0 ? "-" : ""
-      const abs = Math.abs(value)
-      if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-      if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-      if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
-      return `${sign}$${abs.toFixed(0)}`
-    }
-    case "bps":
-      return `${value.toFixed(2)}bp`
-    case "percent":
-      return `${value.toFixed(1)}%`
-    case "days":
-      return `${value.toFixed(0)}d`
-    case "count":
-      return value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toLocaleString()
-    default:
-      return value.toLocaleString()
-  }
-}
+export const TREND_COLORS = CHART_COLORS
+
+export { formatByType as formatValue } from "@/lib/format"
 
 export function formatDateLabel(dateStr: string): string {
   const [y, m, d] = dateStr.split("-")

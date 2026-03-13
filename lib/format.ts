@@ -49,7 +49,36 @@ export function formatPercent(value: number): string {
   return `${sign}${value.toFixed(1)}%`
 }
 
+export function formatDays(value: number): string {
+  return `${value.toFixed(0)}d`
+}
+
+export function formatCount(value: number): string {
+  return value >= 1000 ? `${(value / 1000).toFixed(1)}K` : value.toLocaleString()
+}
+
 export function calcChange(current: number, previous: number): number {
   if (previous === 0) return 0
   return ((current - previous) / previous) * 100
+}
+
+/**
+ * Format a value using a named formatter type.
+ * Use this when the formatter is determined at runtime (e.g. chart configs).
+ */
+export function formatByType(value: number, formatter: string): string {
+  switch (formatter) {
+    case "currency":
+      return formatCurrencyCompact(value)
+    case "bps":
+      return formatBpsRaw(value)
+    case "percent":
+      return `${value.toFixed(1)}%`
+    case "days":
+      return formatDays(value)
+    case "count":
+      return formatCount(value)
+    default:
+      return value.toLocaleString()
+  }
 }

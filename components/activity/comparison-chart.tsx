@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CHART_COLORS } from "@/lib/chart-colors"
 import type { GroupedRow } from "./types"
 import { formatCurrency, formatBps } from "./utils"
 
@@ -139,13 +140,13 @@ export function ComparisonChart({ data, groupLabel }: ComparisonChartProps) {
               <Bar
                 dataKey="current"
                 name="Current"
-                fill="hsl(217, 91%, 60%)"
+                fill={CHART_COLORS[0]}
                 radius={[3, 3, 0, 0]}
               />
               <Bar
                 dataKey="previous"
                 name="Previous"
-                fill="hsl(217, 60%, 68%)"
+                fill={CHART_COLORS[4]}
                 radius={[3, 3, 0, 0]}
               />
             </BarChart>
