@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
 import { TRADE_SELECT_EXPR, SEARCH_COLUMNS, SORTABLE_COLUMNS, F } from "@/lib/field-defs"
+import { parseFilters, whereString, cacheJson, errorJson } from "@/lib/api-utils"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -14,36 +14,23 @@ export async function GET(request: NextRequest) {
   const filtersJson = searchParams.get("filters") || ""
 
   try {
-    const { clauses, params, hasAsofDate } = filtersJson
-      ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
+    const { clauses, params } = parseFilters(filtersJson, { tablePrefix: "gcf_risk_mv" })
 
-    if (!hasAsofDate) {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
-    }
-
-    // Search across multiple text columns
     if (search) {
-      const searchClauses = SEARCH_COLUMNS.map(
-        (col) => `gcf_risk_mv.${col} ILIKE {p_search:String}`,
-      )
+      const searchClauses = SEARCH_COLUMNS.map((col) => `gcf_risk_mv.${col} ILIKE {p_search:String}`)
       clauses.push(`(${searchClauses.join(" OR ")})`)
       params.p_search = `%${search}%`
     }
 
-    // Side filter
     if (sideFilter && (sideFilter === "PAY" || sideFilter === "RECEIVE")) {
       clauses.push(`gcf_risk_mv.${F.side} = {p_side:String}`)
       params.p_side = sideFilter
     }
 
-    const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
+    const whereStr = whereString(clauses)
     const sortCol = SORTABLE_COLUMNS[sortBy] || F.tradeDt
 
-    // Count query
     const countQuery = `SELECT count() AS total FROM gcf_risk_mv FINAL ${whereStr}`
-
-    // Data query
     const dataQuery = `
       SELECT ${TRADE_SELECT_EXPR}
       FROM gcf_risk_mv FINAL
@@ -63,12 +50,8 @@ export async function GET(request: NextRequest) {
     const [countRows, rows] = await Promise.all([countResult.json(), dataResult.json()])
     const total = (countRows as { total: number }[])[0]?.total ?? 0
 
-    return NextResponse.json(
-      { rows, total, limit, offset },
-      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
-    )
+    return cacheJson({ rows, total, limit, offset })
   } catch (error) {
-    console.error("Error fetching trades:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("Error fetching trades", error)
   }
 }

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
 import { TRADE_SELECT_EXPR, F } from "@/lib/field-defs"
+import { parseFilters, whereString, cacheJson, errorJson } from "@/lib/api-utils"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -12,16 +12,7 @@ export async function GET(request: NextRequest) {
   const filtersJson = searchParams.get("filters") || ""
 
   try {
-
-    // Build WHERE from filters
-    const { clauses, params, hasAsofDate } = filtersJson
-      ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
-
-    // Always scope to an asofDate — fall back to the latest available
-    if (!hasAsofDate) {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
-    }
+    const { clauses, params } = parseFilters(filtersJson, { tablePrefix: "gcf_risk_mv" })
 
     // Exclude trades with zero cash out
     clauses.push(`toFloat64OrZero(toString(gcf_risk_mv.${F.cashOut})) != 0`)
@@ -32,29 +23,18 @@ export async function GET(request: NextRequest) {
       clauses.push(`gcf_risk_mv.${F.maturityDt} <= gcf_risk_mv.${F.asofDate} + toIntervalDay(${relativeDt})`)
     }
 
-    const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
-
     const query = `
       SELECT ${TRADE_SELECT_EXPR}
       FROM gcf_risk_mv FINAL
-      ${whereStr}
+      ${whereString(clauses)}
       ORDER BY ${sort}
       LIMIT ${limit}
     `
 
     const client = getClickHouseClient()
-    const result = await client.query({
-      query,
-      query_params: params,
-      format: "JSONEachRow",
-    })
-    const rows = await result.json()
-
-    return NextResponse.json(rows, {
-      headers: { "Cache-Control": "public, max-age=60, s-maxage=60" },
-    })
+    const result = await client.query({ query, query_params: params, format: "JSONEachRow" })
+    return cacheJson(await result.json())
   } catch (error) {
-    console.error("Error fetching recent trades:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("Error fetching recent trades", error)
   }
 }

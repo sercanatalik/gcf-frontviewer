@@ -1,25 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters, splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
-import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY, NEW_TRADE_SELECT_EXPR, resolveField } from "@/lib/field-defs"
+import { splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
+import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY, NEW_TRADE_SELECT_EXPR } from "@/lib/field-defs"
+import { parseFilters, resolveParam, cacheJson, errorJson } from "@/lib/api-utils"
 
-/**
- * Activity Comparison API
- *
- * Compares two snapshots: latest (today) vs N days ago (default 30).
- * Groups by a chosen dimension (region, hmsSL1, hmsSL2, book, etc.)
- * and returns:
- *   - fundingAmount, collateralAmount, weighted avg spread for each period
- *   - matured trade count (trades present in previous but not in current)
- *   - new trade count (trades present in current but not in previous)
- */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const groupBy = resolveField(searchParams.get("groupBy") || "") || F.hms_region
-  const daysAgo = Math.min(
-    Math.max(Number(searchParams.get("daysAgo") || "30"), 1),
-    730,
-  )
+  const groupBy = resolveParam(searchParams, "groupBy", F.hms_region)
+  const daysAgo = Math.min(Math.max(Number(searchParams.get("daysAgo") || "30"), 1), 730)
   const filtersJson = searchParams.get("filters") || ""
 
   if (!IDENTIFIER_RE.test(groupBy) || !ALLOWED_GROUP_BY.has(groupBy as string)) {
@@ -28,11 +16,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-
-    const { clauses, params, hasAsofDate } = filtersJson
-      ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
-
+    const { clauses, params, hasAsofDate } = parseFilters(filtersJson, { skipDefaultAsof: true })
     const { asofClause, filterWhere } = splitAsofDateClauses(clauses, hasAsofDate)
     const latestDateExpr = buildLatestDateExpr(asofClause, hasAsofDate)
 
@@ -141,10 +125,7 @@ export async function GET(request: NextRequest) {
       WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
     `
 
-    // ── 4. New trades between periods (detail rows) ─────────────────
-    // Use a subquery for filtering to avoid alias conflict:
-    // TRADE_SELECT_EXPR aliases date columns as strings (e.g. formatDateTime(asofDate) AS asofDate)
-    // which would clash with the WHERE clause comparing asofDate to a Date value.
+    // ── 4. New trades between periods ─────────────────────────────
     const newTradesQuery = `
       WITH
         latestDate AS (${latestDateExpr}),
@@ -167,7 +148,6 @@ export async function GET(request: NextRequest) {
     `
 
     const queryParams = { daysAgo, ...params }
-
     const [groupedResult, tradeFlowResult, totalsResult, newTradesResult] = await Promise.all([
       client.query({ query: groupedQuery, query_params: queryParams, format: "JSONEachRow" }),
       client.query({ query: tradeFlowQuery, query_params: queryParams, format: "JSONEachRow" }),
@@ -183,18 +163,14 @@ export async function GET(request: NextRequest) {
     const currentTotals = totals.find((r) => r.period === "current") || {}
     const previousTotals = totals.find((r) => r.period === "previous") || {}
 
-    return NextResponse.json(
-      {
-        grouped,
-        tradeFlow: tradeFlow[0] || {},
-        totals: { current: currentTotals, previous: previousTotals },
-        newTrades,
-        meta: { groupBy, daysAgo },
-      },
-      { headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } },
-    )
+    return cacheJson({
+      grouped,
+      tradeFlow: tradeFlow[0] || {},
+      totals: { current: currentTotals, previous: previousTotals },
+      newTrades,
+      meta: { groupBy, daysAgo },
+    }, 300)
   } catch (error) {
-    console.error("Activity comparison error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("Activity comparison error", error)
   }
 }

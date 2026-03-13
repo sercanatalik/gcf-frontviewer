@@ -1,30 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { WEIGHTED_FIELDS, F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
-
-/**
- * Strip asofDate entries from serialised filters and return the date value.
- * The historical route treats asofDate as an upper bound (<=), not exact match.
- */
-function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: string | null } {
-  if (!filtersJson) return { cleaned: "", asofDate: null }
-  try {
-    const parsed = JSON.parse(filtersJson) as Array<{ field: string; operator: string; value: string[] }>
-    const asofEntry = parsed.find((f) => f.field === F.asofDate)
-    const asofDate = asofEntry?.value?.[0] ?? null
-    const rest = parsed.filter((f) => f.field !== F.asofDate)
-    return { cleaned: rest.length > 0 ? JSON.stringify(rest) : "", asofDate }
-  } catch {
-    return { cleaned: filtersJson, asofDate: null }
-  }
-}
+import { WEIGHTED_FIELDS, F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { resolveParam, resolveOptionalParam, whereString, cacheJson, errorJson, extractAsofDate } from "@/lib/api-utils"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const fieldName = resolveField(searchParams.get("fieldName") || "") || F.cashOut
-  const rawGroupBy = searchParams.get("groupBy")
-  const groupBy = rawGroupBy ? resolveField(rawGroupBy) || rawGroupBy : undefined
+  const fieldName = resolveParam(searchParams, "fieldName", F.cashOut)
+  const groupBy = resolveOptionalParam(searchParams, "groupBy")
   const filtersJson = searchParams.get("filters") || ""
 
   if (!IDENTIFIER_RE.test(fieldName)) {
@@ -36,8 +19,6 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-
-    // Extract asofDate separately — historical chart uses it as upper bound, not equality
     const { cleaned, asofDate } = extractAsofDate(filtersJson)
 
     const { clauses, params } = cleaned
@@ -51,10 +32,7 @@ export async function GET(request: NextRequest) {
       clauses.push(`${F.asofDate} <= (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
 
-    const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
-
     const groupByExpr = groupBy ? `, ${groupBy}` : ""
-
     const weighted = WEIGHTED_FIELDS[fieldName]
     const selectExpr = weighted
       ? `sum(toFloat64OrZero(toString(${weighted.numerator})) * toFloat64OrZero(toString(${weighted.weight}))) / nullIf(sum(toFloat64OrZero(toString(${weighted.weight}))), 0) AS ${fieldName}`
@@ -65,32 +43,19 @@ export async function GET(request: NextRequest) {
         ${F.asofDate}${groupByExpr},
         ${selectExpr}
       FROM gcf_risk_mv FINAL
-      ${whereStr}
+      ${whereString(clauses)}
       GROUP BY ${F.asofDate}${groupByExpr}
       ORDER BY ${F.asofDate}${groupByExpr}
     `
 
-    const result = await client.query({
-      query,
-      query_params: params,
-      format: "JSONEachRow",
-    })
+    const result = await client.query({ query, query_params: params, format: "JSONEachRow" })
     const rows = await result.json()
 
-    return NextResponse.json(
-      {
-        data: rows,
-        meta: {
-          fieldName,
-          groupBy: groupBy || null,
-          recordCount: (rows as unknown[]).length,
-        },
-      },
-      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
-    )
+    return cacheJson({
+      data: rows,
+      meta: { fieldName, groupBy: groupBy || null, recordCount: (rows as unknown[]).length },
+    })
   } catch (error) {
-    console.error("Historical data error:", error)
-
     if (error instanceof Error) {
       if (error.message.includes("Table") && error.message.includes("doesn't exist")) {
         return NextResponse.json({ error: "Table not found" }, { status: 404 })
@@ -99,7 +64,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: "Invalid field or column" }, { status: 400 })
       }
     }
-
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("Historical data error", error)
   }
 }

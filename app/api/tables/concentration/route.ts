@@ -1,30 +1,24 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
+import { F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { parseFilters, whereString, resolveParam, cacheJson, errorJson } from "@/lib/api-utils"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const filtersJson = searchParams.get("filters") || ""
-  const groupBy = resolveField(searchParams.get("groupBy") || "") || F.counterpartyParentName
-  const field = resolveField(searchParams.get("field") || "") || F.fundingAmount
+  const groupBy = resolveParam(searchParams, "groupBy", F.counterpartyParentName)
+  const field = resolveParam(searchParams, "field", F.fundingAmount)
   const topN = Math.min(Math.max(Number(searchParams.get("topN") || "10"), 1), 50)
+  const filtersJson = searchParams.get("filters") || ""
+
   if (!IDENTIFIER_RE.test(groupBy) || !IDENTIFIER_RE.test(field)) {
     return NextResponse.json({ error: "Invalid parameter" }, { status: 400 })
   }
 
   try {
     const client = getClickHouseClient()
-    const { clauses, params, hasAsofDate } = filtersJson
-      ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
+    const { clauses, params } = parseFilters(filtersJson)
+    const whereStr = whereString(clauses)
 
-    if (!hasAsofDate) {
-      clauses.push(`${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
-    }
-    const whereStr = `WHERE ${clauses.join(" AND ")}`
-
-    // Single query: per-group exposures + total + HHI + top-N concentration
     const query = `
       WITH
         grp AS (
@@ -54,19 +48,6 @@ export async function GET(request: NextRequest) {
         (SELECT count() FROM grp) AS groupCount
     `
 
-    const summaryResult = await client.query({
-      query,
-      query_params: { ...params, topN },
-      format: "JSONEachRow",
-    })
-    const [summary] = (await summaryResult.json()) as Array<{
-      total: number
-      hhi: number
-      topNShare: number
-      groupCount: number
-    }>
-
-    // Top counterparties with share
     const topQuery = `
       WITH grp AS (
         SELECT
@@ -88,34 +69,24 @@ export async function GET(request: NextRequest) {
       LIMIT {topN:UInt32}
     `
 
-    const topResult = await client.query({
-      query: topQuery,
-      query_params: { ...params, topN },
-      format: "JSONEachRow",
-    })
-    const topRows = (await topResult.json()) as Array<{
-      name: string
-      exposure: number
-      share: number
-    }>
+    const qp = { ...params, topN }
+    const [summaryResult, topResult] = await Promise.all([
+      client.query({ query, query_params: qp, format: "JSONEachRow" }),
+      client.query({ query: topQuery, query_params: qp, format: "JSONEachRow" }),
+    ])
 
-    return NextResponse.json(
-      {
-        total: Number(summary?.total) || 0,
-        hhi: Number(summary?.hhi) || 0,
-        topNShare: Number(summary?.topNShare) || 0,
-        groupCount: Number(summary?.groupCount) || 0,
-        topN,
-        items: topRows.map((r) => ({
-          name: r.name,
-          exposure: Number(r.exposure),
-          share: Number(r.share),
-        })),
-      },
-      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
-    )
+    const [summary] = (await summaryResult.json()) as Array<{ total: number; hhi: number; topNShare: number; groupCount: number }>
+    const topRows = (await topResult.json()) as Array<{ name: string; exposure: number; share: number }>
+
+    return cacheJson({
+      total: Number(summary?.total) || 0,
+      hhi: Number(summary?.hhi) || 0,
+      topNShare: Number(summary?.topNShare) || 0,
+      groupCount: Number(summary?.groupCount) || 0,
+      topN,
+      items: topRows.map((r) => ({ name: r.name, exposure: Number(r.exposure), share: Number(r.share) })),
+    })
   } catch (error) {
-    console.error("Concentration error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("Concentration error", error)
   }
 }

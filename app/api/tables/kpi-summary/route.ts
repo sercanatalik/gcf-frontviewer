@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters, splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
+import { splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
 import { buildAggExpr, F } from "@/lib/field-defs"
+import { parseFilters, cacheJson, errorJson } from "@/lib/api-utils"
 
 interface KpiMeasure {
   key: string
@@ -14,20 +15,10 @@ function aliasFor(key: string): string {
   return `v_${key}`
 }
 
-function buildKpiAggExpr(m: KpiMeasure): string {
-  return buildAggExpr(m.field, m.aggregation, {
-    weightField: m.weightField,
-    alias: aliasFor(m.key),
-  })
-}
-
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const measuresJson = searchParams.get("measures")
-  const relativeDays = Math.min(
-    Math.max(Number(searchParams.get("relativeDays") || "180"), 1),
-    365,
-  )
+  const relativeDays = Math.min(Math.max(Number(searchParams.get("relativeDays") || "180"), 1), 365)
   const filtersJson = searchParams.get("filters") || ""
 
   if (!measuresJson) {
@@ -43,15 +34,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-
-    // Build filter clauses
-    const { clauses, params, hasAsofDate } = filtersJson
-      ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
-
+    const { clauses, params, hasAsofDate } = parseFilters(filtersJson, { skipDefaultAsof: true })
     const { asofClause, filterWhere } = splitAsofDateClauses(clauses, hasAsofDate)
-    const aggExprs = measures.map(buildKpiAggExpr).join(", ")
     const latestDateExpr = buildLatestDateExpr(asofClause, hasAsofDate)
+    const aggExprs = measures.map((m) =>
+      buildAggExpr(m.field, m.aggregation, { weightField: m.weightField, alias: aliasFor(m.key) }),
+    ).join(", ")
 
     const query = `
       WITH
@@ -68,21 +56,12 @@ export async function GET(request: NextRequest) {
       WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
     `
 
-    const result = await client.query({
-      query,
-      query_params: { relativeDays, ...params },
-      format: "JSONEachRow",
-    })
-
+    const result = await client.query({ query, query_params: { relativeDays, ...params }, format: "JSONEachRow" })
     const rows = (await result.json()) as Array<Record<string, unknown>>
     const currentRow = rows.find((r) => r.period === "current") || {}
     const previousRow = rows.find((r) => r.period === "previous") || {}
 
-    const data: Record<
-      string,
-      { current: number; previous: number; change: number; changePercent: number }
-    > = {}
-
+    const data: Record<string, { current: number; previous: number; change: number; changePercent: number }> = {}
     for (const m of measures) {
       const alias = aliasFor(m.key)
       const current = Number(currentRow[alias]) || 0
@@ -92,11 +71,8 @@ export async function GET(request: NextRequest) {
       data[m.key] = { current, previous, change, changePercent }
     }
 
-    return NextResponse.json(data, {
-      headers: { "Cache-Control": "public, max-age=60, s-maxage=60" },
-    })
+    return cacheJson(data)
   } catch (error) {
-    console.error("KPI summary error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("KPI summary error", error)
   }
 }

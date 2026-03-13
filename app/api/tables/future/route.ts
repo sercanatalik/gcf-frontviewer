@@ -1,30 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { WEIGHTED_FIELDS, F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
-
-/**
- * Extract asofDate from serialised filters so we can handle it specially.
- * The future route uses asofDate as snapshot date and maturity cutoff.
- */
-function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: string | null } {
-  if (!filtersJson) return { cleaned: "", asofDate: null }
-  try {
-    const parsed = JSON.parse(filtersJson) as Array<{ field: string; operator: string; value: string[] }>
-    const asofEntry = parsed.find((f) => f.field === F.asofDate)
-    const asofDate = asofEntry?.value?.[0] ?? null
-    const rest = parsed.filter((f) => f.field !== F.asofDate)
-    return { cleaned: rest.length > 0 ? JSON.stringify(rest) : "", asofDate }
-  } catch {
-    return { cleaned: filtersJson, asofDate: null }
-  }
-}
+import { WEIGHTED_FIELDS, F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { resolveParam, resolveOptionalParam, cacheJson, errorJson, extractAsofDate } from "@/lib/api-utils"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const fieldName = resolveField(searchParams.get("fieldName") || "") || F.cashOut
-  const rawGroupBy = searchParams.get("groupBy")
-  const groupBy = rawGroupBy ? resolveField(rawGroupBy) || rawGroupBy : undefined
+  const fieldName = resolveParam(searchParams, "fieldName", F.cashOut)
+  const groupBy = resolveOptionalParam(searchParams, "groupBy")
   const filtersJson = searchParams.get("filters") || ""
 
   if (!IDENTIFIER_RE.test(fieldName)) {
@@ -36,14 +19,12 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-
     const { cleaned, asofDate } = extractAsofDate(filtersJson)
 
     const { clauses, params } = cleaned
       ? buildWhereClausesFromFilters(cleaned)
       : { clauses: [] as string[], params: {} as Record<string, unknown> }
 
-    // Scope to selected asofDate or latest
     if (asofDate) {
       clauses.push(`gcf_risk_mv.${F.asofDate} = {_asof:String}`)
       params["_asof"] = asofDate
@@ -51,13 +32,11 @@ export async function GET(request: NextRequest) {
       clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
 
-    // Maturity cutoff: use selected asofDate or today()
     const maturityCutoff = asofDate
       ? `${F.maturityDt} >= {_asof:String}`
       : `${F.maturityDt} >= today()`
 
     const filterWhere = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
-
     const groupByExpr = groupBy ? `, ${groupBy}` : ""
     const partitionExpr = groupBy ? `PARTITION BY ${groupBy} ` : ""
     const joinExpr = groupBy ? `JOIN total_per_group t ON m.${groupBy} = t.${groupBy}` : "CROSS JOIN total_amounts t"
@@ -106,26 +85,14 @@ export async function GET(request: NextRequest) {
       ORDER BY month${groupByExpr}
     `
 
-    const result = await client.query({
-      query,
-      query_params: params,
-      format: "JSONEachRow",
-    })
+    const result = await client.query({ query, query_params: params, format: "JSONEachRow" })
     const rows = await result.json()
 
-    return NextResponse.json(
-      {
-        data: rows,
-        meta: {
-          fieldName,
-          groupBy: groupBy || null,
-          recordCount: (rows as unknown[]).length,
-        },
-      },
-      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
-    )
+    return cacheJson({
+      data: rows,
+      meta: { fieldName, groupBy: groupBy || null, recordCount: (rows as unknown[]).length },
+    })
   } catch (error) {
-    console.error("Future data error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("Future data error", error)
   }
 }

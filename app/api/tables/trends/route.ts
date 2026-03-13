@@ -1,30 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
+import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { parseFilters, whereString, resolveParam, resolveOptionalParam, cacheJson, errorJson } from "@/lib/api-utils"
 
-/**
- * Trends API: time-series data grouped by a date column (tradeDt by default),
- * optionally broken down by a dimension.
- *
- * Query params:
- *   field       - metric field (e.g. fundingAmount, cashOut)
- *   aggregation - sum | avg | count | countDistinct | avgBy
- *   weightField - required for avgBy
- *   timeField   - date column for x-axis (tradeDt | startDt | maturityDt), default tradeDt
- *   groupBy     - optional dimension (e.g. collatCurrency, hmsDesk)
- *   topN        - max groups to show (rest rolled into "Others"), default 5
- *   filters     - serialized filters JSON
- */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const field = resolveField(searchParams.get("field") || "") || F.fundingAmount
+  const field = resolveParam(searchParams, "field", F.fundingAmount)
   const aggregation = searchParams.get("aggregation") || "sum"
-  const rawWeightField = searchParams.get("weightField") || undefined
-  const weightField = rawWeightField ? resolveField(rawWeightField) || rawWeightField : undefined
+  const weightField = resolveOptionalParam(searchParams, "weightField")
   const timeField = ALLOWED_TIME_FIELDS[searchParams.get("timeField") || F.tradeDt] || F.tradeDt
-  const rawGroupBy = searchParams.get("groupBy")
-  const groupBy = rawGroupBy ? resolveField(rawGroupBy) || rawGroupBy : undefined
+  const groupBy = resolveOptionalParam(searchParams, "groupBy")
   const topN = Math.min(Math.max(Number(searchParams.get("topN") || "5"), 1), 20)
   const filtersJson = searchParams.get("filters") || ""
 
@@ -43,16 +28,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-    const { clauses, params, hasAsofDate } = filtersJson
-      ? buildWhereClausesFromFilters(filtersJson)
-      : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
-
-    // Scope to latest asofDate so we work with a single snapshot
-    if (!hasAsofDate) {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
-    }
-
-    const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
+    const { clauses, params } = parseFilters(filtersJson, { tablePrefix: "gcf_risk_mv" })
+    const whereStr = whereString(clauses)
 
     let aggExpr: string
     try {
@@ -62,84 +39,47 @@ export async function GET(request: NextRequest) {
     }
 
     if (!groupBy) {
-      // Simple time series: one value per date bucket
       const query = `
-        SELECT
-          formatDateTime(${timeField}, '%Y-%m-%d') AS dt,
-          ${aggExpr} AS value
-        FROM gcf_risk_mv FINAL
-        ${whereStr}
-        GROUP BY dt
-        ORDER BY dt
+        SELECT formatDateTime(${timeField}, '%Y-%m-%d') AS dt, ${aggExpr} AS value
+        FROM gcf_risk_mv FINAL ${whereStr}
+        GROUP BY dt ORDER BY dt
       `
       const result = await client.query({ query, query_params: params, format: "JSONEachRow" })
-      const rows = await result.json()
-
-      return NextResponse.json(
-        { data: rows, meta: { field, aggregation, timeField, groupBy: null } },
-        { headers: { "Cache-Control": "public, max-age=120, s-maxage=120" } },
+      return cacheJson(
+        { data: await result.json(), meta: { field, aggregation, timeField, groupBy: null } },
+        120,
       )
     }
 
-    // Grouped time series: first find top N groups by total absolute value
+    // Find top N groups
     const topQuery = `
       SELECT ${groupBy} AS grp, abs(${aggExpr}) AS total
-      FROM gcf_risk_mv FINAL
-      ${whereStr}
-      GROUP BY ${groupBy}
-      ORDER BY total DESC
-      LIMIT {topN:UInt32}
+      FROM gcf_risk_mv FINAL ${whereStr}
+      GROUP BY ${groupBy} ORDER BY total DESC LIMIT {topN:UInt32}
     `
-    const topResult = await client.query({
-      query: topQuery,
-      query_params: { ...params, topN },
-      format: "JSONEachRow",
-    })
+    const topResult = await client.query({ query: topQuery, query_params: { ...params, topN }, format: "JSONEachRow" })
     const topGroups = (await topResult.json()) as { grp: string; total: number }[]
     const groupNames = topGroups.map((g) => g.grp).filter(Boolean)
 
     if (groupNames.length === 0) {
-      return NextResponse.json(
-        { data: [], meta: { field, aggregation, timeField, groupBy, groups: [] } },
-        { headers: { "Cache-Control": "public, max-age=120, s-maxage=120" } },
-      )
+      return cacheJson({ data: [], meta: { field, aggregation, timeField, groupBy, groups: [] } }, 120)
     }
 
-    // Build CASE expression to bucket into top groups + Others
-    const caseParts = groupNames
-      .map((_, i) => `WHEN ${groupBy} = {g${i}:String} THEN {g${i}:String}`)
-      .join(" ")
-    const caseExpr = `CASE ${caseParts} ELSE 'Others' END`
-
+    const caseParts = groupNames.map((_, i) => `WHEN ${groupBy} = {g${i}:String} THEN {g${i}:String}`).join(" ")
     const groupParams: Record<string, string> = {}
-    groupNames.forEach((name, i) => {
-      groupParams[`g${i}`] = name
-    })
+    groupNames.forEach((name, i) => { groupParams[`g${i}`] = name })
 
     const query = `
-      SELECT
-        formatDateTime(${timeField}, '%Y-%m-%d') AS dt,
-        ${caseExpr} AS grp,
-        ${aggExpr} AS value
-      FROM gcf_risk_mv FINAL
-      ${whereStr}
-      GROUP BY dt, grp
-      ORDER BY dt, grp
+      SELECT formatDateTime(${timeField}, '%Y-%m-%d') AS dt, CASE ${caseParts} ELSE 'Others' END AS grp, ${aggExpr} AS value
+      FROM gcf_risk_mv FINAL ${whereStr}
+      GROUP BY dt, grp ORDER BY dt, grp
     `
-
-    const result = await client.query({
-      query,
-      query_params: { ...params, ...groupParams },
-      format: "JSONEachRow",
-    })
-    const rows = await result.json()
-
-    return NextResponse.json(
-      { data: rows, meta: { field, aggregation, timeField, groupBy, groups: [...groupNames, "Others"] } },
-      { headers: { "Cache-Control": "public, max-age=120, s-maxage=120" } },
+    const result = await client.query({ query, query_params: { ...params, ...groupParams }, format: "JSONEachRow" })
+    return cacheJson(
+      { data: await result.json(), meta: { field, aggregation, timeField, groupBy, groups: [...groupNames, "Others"] } },
+      120,
     )
   } catch (error) {
-    console.error("Trends API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return errorJson("Trends API error", error)
   }
 }
