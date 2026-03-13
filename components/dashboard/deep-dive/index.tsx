@@ -21,7 +21,7 @@ import type { KpiMeasure, KpiStatData } from "@/components/dashboard/kpi-cards/t
 import { formatKpiValue, formatDelta } from "@/components/dashboard/kpi-cards/utils"
 import { HistoricalChart } from "@/components/dashboard/cash-out-chart/historical-chart"
 import { FutureChart } from "@/components/dashboard/cash-out-chart/future-chart"
-import { filtersActions } from "@/lib/store/filters"
+import { filtersStore, filtersActions } from "@/lib/store/filters"
 import { useFiltersParam } from "@/hooks/use-filters-param"
 import { deepDiveMeasures, DEEP_DIVE_BREAKDOWN_DIMENSIONS, DEFAULT_RELATIVE_DAYS } from "@/lib/field-defs"
 import { RiskFilter } from "@/components/dashboard/filters/risk-filter"
@@ -89,27 +89,32 @@ async function fetchSubBreakdown(
 
 export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
   const router = useRouter()
+  const deepDiveId = `__deepdive_${field}`
 
-  // Ensure the filter store knows which table to query distinct values from
-  React.useEffect(() => {
+  // Inject the deep-dive filter synchronously so the very first render already
+  // includes it in filtersParam — avoids a wasted fetch without the filter.
+  const injectedRef = React.useRef(false)
+  if (!injectedRef.current) {
     filtersActions.setActiveTable("gcf_risk_mv")
-  }, [])
-
-  // Inject the deep-dive filter into the store so all queries (including child
-  // chart components) pick it up reactively.
-  React.useEffect(() => {
-    const id = `__deepdive_${field}`
-    filtersActions.addFilter({
-      id,
-      type: "select",
-      operator: "is",
-      value: [value],
-      field,
-    })
-    return () => {
-      filtersActions.removeFilter(id)
+    const exists = filtersStore.state.filters.some((f) => f.id === deepDiveId)
+    if (!exists) {
+      filtersActions.addFilter({
+        id: deepDiveId,
+        type: "select",
+        operator: "is",
+        value: [value],
+        field,
+      })
     }
-  }, [field, value])
+    injectedRef.current = true
+  }
+
+  // Clean up the deep-dive filter on unmount
+  React.useEffect(() => {
+    return () => {
+      filtersActions.removeFilter(deepDiveId)
+    }
+  }, [deepDiveId])
 
   // Reactive: re-serialises whenever the store changes (user adds/removes filters)
   const filtersParam = useFiltersParam()
