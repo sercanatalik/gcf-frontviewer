@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Scope to latest asofDate so we work with a single snapshot
     if (!hasAsofDate) {
-      clauses.push("gcf_risk_mv.asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
     }
 
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""

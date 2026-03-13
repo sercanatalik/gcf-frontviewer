@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { WEIGHTED_FIELDS } from "@/lib/field-defs"
+import { WEIGHTED_FIELDS, F } from "@/lib/field-defs"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
 
@@ -13,9 +13,9 @@ function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: stri
   if (!filtersJson) return { cleaned: "", asofDate: null }
   try {
     const parsed = JSON.parse(filtersJson) as Array<{ field: string; operator: string; value: string[] }>
-    const asofEntry = parsed.find((f) => f.field === "asofDate")
+    const asofEntry = parsed.find((f) => f.field === F.asofDate)
     const asofDate = asofEntry?.value?.[0] ?? null
-    const rest = parsed.filter((f) => f.field !== "asofDate")
+    const rest = parsed.filter((f) => f.field !== F.asofDate)
     return { cleaned: rest.length > 0 ? JSON.stringify(rest) : "", asofDate }
   } catch {
     return { cleaned: filtersJson, asofDate: null }
@@ -24,7 +24,7 @@ function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: stri
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const fieldName = searchParams.get("fieldName") || "cashOut"
+  const fieldName = searchParams.get("fieldName") || F.cashOut
   const groupBy = searchParams.get("groupBy") || undefined
   const filtersJson = searchParams.get("filters") || ""
 
@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
       : { clauses: [] as string[], params: {} as Record<string, unknown> }
 
     if (asofDate) {
-      clauses.push("asofDate <= {_asof:String}")
+      clauses.push(`${F.asofDate} <= {_asof:String}`)
       params["_asof"] = asofDate
     } else {
-      clauses.push("asofDate <= (SELECT max(asofDate) FROM gcf_risk_mv)")
+      clauses.push(`${F.asofDate} <= (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
     }
 
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
@@ -63,12 +63,12 @@ export async function GET(request: NextRequest) {
 
     const query = `
       SELECT
-        asofDate${groupByExpr},
+        ${F.asofDate}${groupByExpr},
         ${selectExpr}
       FROM gcf_risk_mv
       ${whereStr}
-      GROUP BY asofDate${groupByExpr}
-      ORDER BY asofDate${groupByExpr}
+      GROUP BY ${F.asofDate}${groupByExpr}
+      ORDER BY ${F.asofDate}${groupByExpr}
     `
 
     const result = await client.query({

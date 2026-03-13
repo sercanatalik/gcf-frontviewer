@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { WEIGHTED_FIELDS } from "@/lib/field-defs"
+import { WEIGHTED_FIELDS, F } from "@/lib/field-defs"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
 
@@ -13,9 +13,9 @@ function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: stri
   if (!filtersJson) return { cleaned: "", asofDate: null }
   try {
     const parsed = JSON.parse(filtersJson) as Array<{ field: string; operator: string; value: string[] }>
-    const asofEntry = parsed.find((f) => f.field === "asofDate")
+    const asofEntry = parsed.find((f) => f.field === F.asofDate)
     const asofDate = asofEntry?.value?.[0] ?? null
-    const rest = parsed.filter((f) => f.field !== "asofDate")
+    const rest = parsed.filter((f) => f.field !== F.asofDate)
     return { cleaned: rest.length > 0 ? JSON.stringify(rest) : "", asofDate }
   } catch {
     return { cleaned: filtersJson, asofDate: null }
@@ -24,7 +24,7 @@ function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: stri
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const fieldName = searchParams.get("fieldName") || "cashOut"
+  const fieldName = searchParams.get("fieldName") || F.cashOut
   const groupBy = searchParams.get("groupBy") || undefined
   const filtersJson = searchParams.get("filters") || ""
 
@@ -46,16 +46,16 @@ export async function GET(request: NextRequest) {
 
     // Scope to selected asofDate or latest
     if (asofDate) {
-      clauses.push("gcf_risk_mv.asofDate = {_asof:String}")
+      clauses.push(`gcf_risk_mv.${F.asofDate} = {_asof:String}`)
       params["_asof"] = asofDate
     } else {
-      clauses.push("gcf_risk_mv.asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
     }
 
     // Maturity cutoff: use selected asofDate or today()
     const maturityCutoff = asofDate
-      ? `maturityDt >= {_asof:String}`
-      : `maturityDt >= today()`
+      ? `${F.maturityDt} >= {_asof:String}`
+      : `${F.maturityDt} >= today()`
 
     const filterWhere = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
 
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     const query = `
       WITH monthly_data AS (
         SELECT
-          toStartOfWeek(maturityDt) AS month
+          toStartOfWeek(${F.maturityDt}) AS month
           ${groupByExpr},
           ${monthlyAggExpr}
         FROM gcf_risk_mv
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
         ${joinExpr}
       )
       SELECT
-        month AS maturityDt
+        month AS ${F.maturityDt}
         ${groupByExpr},
         remaining AS ${fieldName}
       FROM cumulative_data

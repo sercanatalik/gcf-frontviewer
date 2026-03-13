@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
     if (!hasAsofDate) {
-      clauses.push("asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
+      clauses.push(`${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
     }
     const whereStr = `WHERE ${clauses.join(" AND ")}`
 

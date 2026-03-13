@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { buildAggExpr } from "@/lib/field-defs"
+import { buildAggExpr, F } from "@/lib/field-defs"
 
 interface StatMeasure {
   key: string
@@ -45,32 +45,32 @@ export async function GET(request: NextRequest) {
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
     const nonAsofClauses = hasAsofDate
-      ? clauses.filter((c) => !c.includes("asofDate"))
+      ? clauses.filter((c) => !c.includes(F.asofDate))
       : clauses
     const asofClause = hasAsofDate
-      ? clauses.find((c) => c.includes("asofDate"))
+      ? clauses.find((c) => c.includes(F.asofDate))
       : null
 
     const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
     const aggExprs = measures.map(buildStatAggExpr).join(", ")
 
     const latestDateExpr = hasAsofDate && asofClause
-      ? `SELECT max(asofDate) AS d FROM gcf_risk_mv WHERE ${asofClause}`
-      : `SELECT max(asofDate) AS d FROM gcf_risk_mv`
+      ? `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv WHERE ${asofClause}`
+      : `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv`
 
     const query = `
       WITH
         latestDate AS (${latestDateExpr}),
-        prevDate AS (SELECT max(asofDate) AS d FROM gcf_risk_mv WHERE asofDate <= (SELECT d FROM latestDate) - toIntervalDay({relativeDays:UInt32}))
+        prevDate AS (SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({relativeDays:UInt32}))
       SELECT
         'current' AS period, ${aggExprs}
       FROM gcf_risk_mv
-      WHERE asofDate = (SELECT d FROM latestDate)${filterWhere}
+      WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
       UNION ALL
       SELECT
         'previous' AS period, ${aggExprs}
       FROM gcf_risk_mv
-      WHERE asofDate = (SELECT d FROM prevDate)${filterWhere}
+      WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
     `
 
     const result = await client.query({

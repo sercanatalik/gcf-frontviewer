@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
     if (!hasAsofDate) {
-      clauses.push("gcf_risk_mv.asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
     }
 
     // Search across multiple text columns
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     // Side filter
     if (sideFilter && (sideFilter === "PAY" || sideFilter === "RECEIVE")) {
-      clauses.push("gcf_risk_mv.side = {p_side:String}")
+      clauses.push(`gcf_risk_mv.${F.side} = {p_side:String}`)
       params.p_side = sideFilter
     }
 
