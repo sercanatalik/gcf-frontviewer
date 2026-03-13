@@ -15,8 +15,12 @@ export const F = {
   // identifiers & status
   tradeId: "tradeId",
   asofDate: "asofDate",
-  tradeStatus: "tradeStatus",
+  snapId: "snapId",
+  id: "id",
+  tradeStatus: "status",
   side: "side",
+  version: "version",
+  pts: "pts",
 
   // product
   productType: "productType",
@@ -28,6 +32,9 @@ export const F = {
   startDt: "startDt",
   maturityDt: "maturityDt",
   maturityIsOpen: "maturityIsOpen",
+  executionDt: "executionDt",
+  calculatedAt: "calculatedAt",
+  updatedAt: "t_updatedAt",
 
   // amounts
   fundingAmount: "fundingAmount",
@@ -36,43 +43,73 @@ export const F = {
   collateralAmountLCY: "collateralAmountLCY",
   financingExposure: "financingExposure",
   cashOut: "cashOut",
+  outstandingAmt: "outstandingAmt",
+  iaAmount: "iaAmount",
+  t_iaAmount: "t_iaAmount",
+  iaCcy: "t_iaCcy",
 
   // funding terms
-  fundingMargin: "fundingMargin",
-  fixedRate: "fixedRate",
+  fundingMargin: "t_fundingMargin",
+  fixedRate: "t_fixedRate",
   fundingType: "fundingType",
-  fundingCurrency: "fundingCurrency",
-  fundingFixingLabel: "fundingFixingLabel",
+  fundingCurrency: "t_fundingCurrency",
+  fundingFixingLabel: "t_fundingFixingLabel",
   haircut: "haircut",
+  sideFactorFunding: "sideFactorFunding",
+  sideFactorCollateral: "sideFactorCollateral",
+  fixingBondPrice: "fixingBondPrice",
+  fixingFx: "fixingFx",
 
   // collateral
-  collateralDesc: "collateralDesc",
-  collateralType: "collateralType",
-  collatCurrency: "collatCurrency",
+  collateralDesc: "t_collateralDesc",
+  collateralType: "i_collateralType",
+  collateralId: "t_collateralId",
+  collatCurrency: "t_collatCurrency",
+  payoutCurrency: "t_payoutCurrency",
   i_desc: "i_desc",
   i_type: "i_type",
   i_coupon: "i_coupon",
   i_instrumentCcy: "i_instrumentCcy",
   i_maturityDt: "i_maturityDt",
+  i_outstandingAmt: "i_outstandingAmt",
+  i_collatQuality: "i_collatQuality",
+  i_collateralType: "i_collateralType",
 
-  // identifiers
+  // instrument identifiers
   i_isinId: "i_isinId",
   i_bbgId: "i_bbgId",
   i_ticker: "i_ticker",
+  i_palmsCode: "i_palmsCode",
 
-  // counterparty
-  counterParty: "counterParty",
-  counterpartyParentName: "counterpartyParentName",
-  cp_type: "cp_type",
-  cp_ratingMoodys: "cp_ratingMoodys",
-  cp_ratingSnp: "cp_ratingSnp",
-  cp_crr: "cp_crr",
-  cp_lei: "cp_lei",
+  // instrument geography & classification
+  i_country: "i_country",
+  i_region: "i_region",
+  i_industrySector: "i_industrySector",
+  i_rating: "i_rating",
   i_countryOfRisk: "i_countryOfRisk",
-  cp_country: "cp_country",
 
   // issuer
   i_issuerName: "i_issuerName",
+  i_issuerLei: "i_issuerLei",
+
+  // counterparty
+  counterParty: "counterParty",
+  counterpartyName: "counterpartyName",
+  counterpartyParent: "counterpartyParent",
+  counterpartyParentName: "counterpartyParent",
+  cp_type: "cp_type",
+  cp_ratingMoodys: "cp_ratingMoodys",
+  cp_ratingSnp: "cp_ratingSnP",
+  cp_crr: "cp_crr",
+  cp_lei: "cp_lei",
+  cp_country: "cp_country",
+  cp_region: "cp_region",
+  cp_countryIncorporation: "cp_countryIncorporation",
+  cp_countryOperation: "cp_countryOperation",
+  cp_treatsParent: "cp_treatsParent",
+
+  // wrong way risk
+  isWWR: "isWWR",
 
   // trading / book
   hmsDesk: "hmsDesk",
@@ -80,17 +117,41 @@ export const F = {
   hmsPortfolio: "hmsPortfolio",
   hmsSL1: "hmsSL1",
   hmsSL2: "hmsSL2",
+  hmsSL3: "hmsSL3",
   hms_primaryTrader: "hms_primaryTrader",
+  hms_primarySupervisor: "hms_primarySupervisor",
   hms_region: "hms_region",
   hms_subRegion: "hms_subRegion",
+  hms_subSubRegion: "hms_subSubRegion",
+  hms_subSubSubRegion: "hms_subSubSubRegion",
   hms_tradingLocation: "hms_tradingLocation",
   hms_bookCategory: "hms_bookCategory",
   hms_leName: "hms_leName",
+  hms_leCurrency: "hms_leCurrency",
+  hms_leHolding: "hms_leHolding",
+  hms_leEntity: "hms_leEntity",
+  hms_leShortCode: "hms_leShortCode",
+  hms_costCentre: "hms_costCentre",
+  hms_system: "hms_system",
+  hms_businessLine: "hms_businessLine",
+  hms_globalBusiness: "hms_globalBusiness",
+  hms_deskGuid: "hms_deskGuid",
+  hms_bookGuid: "hms_bookGuid",
+  hms_trouxId: "hms_trouxId",
+  hms_volckerDeskCode: "hms_volckerDeskCode",
+  hms_regulatoryTmt: "hms_regulatoryTmt",
+  hms_globalAccountingTmt: "hms_globalAccountingTmt",
+  hms_globalRegulatoryTmt: "hms_globalRegulatoryTmt",
+  hms_regionalReportingCurrency: "hms_regionalReportingCurrency",
+  hms_pnlFeed: "hms_pnlFeed",
+  hms_saContributory: "hms_saContributory",
 
   // fx
   fxSpot: "fxSpot",
-  fxPair: "fxPair",
-  fxPairFunding: "fxPairFunding",
+  fxSpotFunding: "fxSpotFunding",
+  fxSpotEOD: "fxSpotEOD",
+  fxPair: "t_fxPair",
+  fxPairFunding: "t_fxPairFunding",
 
   // risk
   dtm: "dtm",
@@ -103,9 +164,29 @@ export const F = {
   accrualDaily: "accrualDaily",
   accrualProjected: "accrualProjected",
   accrualRealised: "accrualRealised",
+
+  // evergreen / extendible
+  maturityIsEvergreen: "t_maturityIsEvergreen",
+  everGreenTerm: "t_everGreenTerm",
+  everGreenAutoroll: "t_everGreenAutoroll",
+  isExtendible: "t_isExtendible",
 } as const
 
-export type FieldName = (typeof F)[keyof typeof F]
+export type FieldKey = keyof typeof F
+export type FieldName = (typeof F)[FieldKey]
+
+/**
+ * Resolve a field key (used in URLs/frontend) to the actual DB column name.
+ * If the value is already a DB column name, returns it as-is.
+ */
+const _fieldLookup: Record<string, string> = Object.fromEntries(
+  Object.entries(F).flatMap(([key, val]) =>
+    key === val ? [[key, val]] : [[key, val], [val, val]],
+  ),
+)
+export function resolveField(keyOrCol: string): string | undefined {
+  return _fieldLookup[keyOrCol]
+}
 
 // ---------------------------------------------------------------------------
 // 2. Date columns  (need special formatting / comparison)
@@ -127,20 +208,35 @@ export const TRADE_COLUMNS = [
   F.tradeId, F.asofDate, F.tradeStatus, F.side,
   F.productType, F.productSubType, F.hms_assetClass,
   F.tradeDt, F.startDt, F.maturityDt, F.maturityIsOpen,
-  F.fundingAmount, F.fundingAmountLCY, F.collateralAmount, F.collateralAmountLCY, F.financingExposure, F.cashOut,
+  F.fundingAmount, F.fundingAmountLCY, F.collateralAmount, F.collateralAmountLCY, F.cashOut,
   F.fundingMargin, F.fixedRate, F.fundingType, F.fundingCurrency, F.fundingFixingLabel, F.haircut,
   F.collateralDesc, F.collateralType, F.collatCurrency, F.i_desc, F.i_type, F.i_coupon, F.i_instrumentCcy, F.i_maturityDt,
   F.i_isinId, F.i_bbgId, F.i_ticker,
   F.counterParty, F.counterpartyParentName, F.cp_type, F.cp_ratingMoodys, F.cp_ratingSnp, F.cp_crr, F.cp_lei, F.i_countryOfRisk, F.cp_country,
   F.i_issuerName,
-  F.hmsDesk, F.hmsBook, F.hmsPortfolio, F.hmsSL1, F.hmsSL2, F.hms_primaryTrader, F.hms_region, F.hms_subRegion, F.hms_tradingLocation, F.hms_bookCategory, F.hms_leName,
+  F.hmsDesk, F.hmsBook, F.hmsPortfolio, F.hmsSL1, F.hmsSL2, F.hms_primaryTrader, F.hms_region, F.hms_subRegion, F.hms_tradingLocation,
   F.fxSpot, F.fxPair, F.fxPairFunding,
-  F.dtm, F.age, F.tenor, F.realisedMarginCall, F.expectedMarginCall,
+  F.dtm, F.age, F.tenor,
   F.accrualDaily, F.accrualProjected, F.accrualRealised,
 ] as const
 
 /** SQL SELECT expression with date formatting applied. */
 export const TRADE_SELECT_EXPR = TRADE_COLUMNS.map((col) =>
+  DATE_COLUMNS.has(col)
+    ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
+    : col,
+).join(", ")
+
+/** Slim trade columns for activity comparison new-trades list. */
+export const NEW_TRADE_COLUMNS = [
+  F.tradeId, F.counterParty, F.productType, F.side,
+  F.fundingAmount, F.collateralAmount, F.cashOut, F.fundingMargin,
+  F.hmsDesk, F.hms_region, F.tradeDt, F.maturityDt,
+  F.fundingCurrency, F.collateralDesc,
+] as const
+
+/** SQL SELECT for new-trades (14 columns vs 59 in TRADE_SELECT_EXPR). */
+export const NEW_TRADE_SELECT_EXPR = NEW_TRADE_COLUMNS.map((col) =>
   DATE_COLUMNS.has(col)
     ? `formatDateTime(${col}, '%Y-%m-%d') AS ${col}`
     : col,
@@ -456,11 +552,13 @@ export const TAB_SUMMARY_MEASURES = {
  * @param options.alias       - optional SQL alias for the expression
  */
 export function buildAggExpr(
-  field: string,
+  rawField: string,
   aggregation: string,
   options?: { weightField?: string; alias?: string },
 ): string {
-  const { weightField, alias } = options ?? {}
+  const field = resolveField(rawField) || rawField
+  const { alias } = options ?? {}
+  const weightField = options?.weightField ? (resolveField(options.weightField) || options.weightField) : undefined
 
   let expr: string
   if (aggregation === "avgBy") {

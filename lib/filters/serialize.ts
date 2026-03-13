@@ -23,7 +23,7 @@ export interface SerializedFilter {
   value: string[]
 }
 
-import { ALLOWED_FILTER_COLUMNS, DATE_COLUMNS, F } from "@/lib/field-defs"
+import { ALLOWED_FILTER_COLUMNS, DATE_COLUMNS, F, resolveField } from "@/lib/field-defs"
 
 /** Date-relative value resolver (e.g. "Today" → '2026-03-07') */
 function resolveDateValue(val: string): string {
@@ -81,13 +81,12 @@ export function buildWhereClausesFromFilters(filtersJson: string): {
   if (!Array.isArray(parsed)) return { clauses, params, hasAsofDate }
 
   parsed.forEach((f, idx) => {
-    if (!ALLOWED_FILTER_COLUMNS.has(f.field)) return
+    const col = resolveField(f.field) || f.field
+    if (!ALLOWED_FILTER_COLUMNS.has(col)) return
     if (!f.value || f.value.length === 0) return
 
     const sqlOp = filterOperators[f.operator]
     if (!sqlOp) return
-
-    const col = f.field
     if (col === F.asofDate) hasAsofDate = true
     const isDate = DATE_COLUMNS.has(col)
     const paramKey = `p${idx}`

@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowUpDown, TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 import { useState, useMemo } from "react"
 import {
   Card,
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { SortHeader } from "./sort-header"
 import type { GroupedRow } from "./types"
 import { formatCurrency, formatBps, formatNumber, calcChange, formatPercent } from "./utils"
 
@@ -51,18 +52,6 @@ function ChangeCell({ current, previous, format }: { current: number; previous: 
         </span>
       )}
     </div>
-  )
-}
-
-function SortHeader({ field, children, onSort }: { field: SortField; children: React.ReactNode; onSort: (field: SortField) => void }) {
-  return (
-    <button
-      className="flex items-center gap-1 hover:text-foreground"
-      onClick={() => onSort(field)}
-    >
-      {children}
-      <ArrowUpDown className="size-3 text-muted-foreground/50" />
-    </button>
   )
 }
 

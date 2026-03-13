@@ -79,7 +79,7 @@ export function TradeFlowCards({ tradeFlow, daysAgo }: TradeFlowCardsProps) {
                   </span>
                 </div>
                 <div className={`font-mono text-2xl font-bold tracking-tight ${item.color}`}>
-                  {item.value > 0 && item.label === "Net Change" ? "+" : ""}
+                  {item.label === "Net Change" && item.value > 0 ? "+" : ""}
                   {formatNumber(item.value)}
                 </div>
                 <div className="text-[10px] text-muted-foreground">

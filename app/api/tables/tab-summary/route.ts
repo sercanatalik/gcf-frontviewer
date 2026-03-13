@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { F, TAB_SUMMARY_MEASURES, IDENTIFIER_RE } from "@/lib/field-defs"
+import { F, TAB_SUMMARY_MEASURES, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const groupBy = searchParams.get("groupBy")
+  const rawGroupBy = searchParams.get("groupBy")
+  const groupBy = rawGroupBy ? resolveField(rawGroupBy) || rawGroupBy : null
   const limit = Math.min(
     Math.max(Number(searchParams.get("limit") || "10"), 1),
     50,

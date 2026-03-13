@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { buildAggExpr, F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { buildAggExpr, F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const field = searchParams.get("field")
+  const rawField = searchParams.get("field")
+  const field = rawField ? resolveField(rawField) || rawField : null
   const aggregation = searchParams.get("aggregation") || "sum"
-  const groupBy = searchParams.get("groupBy")
-  const weightField = searchParams.get("weightField") || undefined
+  const rawGroupBy = searchParams.get("groupBy")
+  const groupBy = rawGroupBy ? resolveField(rawGroupBy) || rawGroupBy : null
+  const rawWeightField = searchParams.get("weightField") || undefined
+  const weightField = rawWeightField ? resolveField(rawWeightField) || rawWeightField : undefined
   const limit = Math.min(
     Math.max(Number(searchParams.get("limit") || "8"), 1),
     50,

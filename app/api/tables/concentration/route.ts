@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filtersJson = searchParams.get("filters") || ""
-  const groupBy = searchParams.get("groupBy") || F.counterpartyParentName
-  const field = searchParams.get("field") || F.fundingAmount
+  const groupBy = resolveField(searchParams.get("groupBy") || "") || F.counterpartyParentName
+  const field = resolveField(searchParams.get("field") || "") || F.fundingAmount
   const topN = Math.min(Math.max(Number(searchParams.get("topN") || "10"), 1), 50)
   if (!IDENTIFIER_RE.test(groupBy) || !IDENTIFIER_RE.test(field)) {
     return NextResponse.json({ error: "Invalid parameter" }, { status: 400 })

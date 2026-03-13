@@ -145,7 +145,7 @@ export function ActivityComparison() {
           <TradeFlowCards tradeFlow={data.tradeFlow} daysAgo={daysAgo} />
 
           {/* Chart + Table */}
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[3fr_2fr]">
             <ComparisonChart data={data.grouped} groupLabel={currentLabel} />
             <ComparisonTable data={data.grouped} groupLabel={currentLabel} daysAgo={daysAgo} />
           </div>

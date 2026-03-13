@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters, splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
-import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY, TRADE_SELECT_EXPR } from "@/lib/field-defs"
+import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY, NEW_TRADE_SELECT_EXPR, resolveField } from "@/lib/field-defs"
 
 /**
  * Activity Comparison API
@@ -15,7 +15,7 @@ import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY, TRADE_SELECT_EXPR } from "@/lib/fie
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const groupBy = searchParams.get("groupBy") || F.hms_region
+  const groupBy = resolveField(searchParams.get("groupBy") || "") || F.hms_region
   const daysAgo = Math.min(
     Math.max(Number(searchParams.get("daysAgo") || "30"), 1),
     730,
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
           WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
             AND ${F.tradeId} NOT IN (SELECT ${F.tradeId} FROM previousIds)
         )
-      SELECT ${TRADE_SELECT_EXPR}
+      SELECT ${NEW_TRADE_SELECT_EXPR}
       FROM filtered
       ORDER BY toFloat64OrZero(toString(${F.fundingAmount})) DESC
       LIMIT 500

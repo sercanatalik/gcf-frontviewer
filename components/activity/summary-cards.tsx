@@ -9,6 +9,7 @@ import {
   Users,
   BookOpen,
   Activity,
+  Hash,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -71,7 +72,7 @@ const metrics = [
   {
     key: "tradeCount",
     label: "Total Trades",
-    icon: BookOpen,
+    icon: Hash,
     format: formatNumber,
     color: "oklch(0.65 0.15 50)",
   },

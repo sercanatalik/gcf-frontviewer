@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
 
 /**
  * Trends API: time-series data grouped by a date column (tradeDt by default),
@@ -18,11 +18,13 @@ import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F, IDENTIFIER_
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const field = searchParams.get("field") || F.fundingAmount
+  const field = resolveField(searchParams.get("field") || "") || F.fundingAmount
   const aggregation = searchParams.get("aggregation") || "sum"
-  const weightField = searchParams.get("weightField") || undefined
+  const rawWeightField = searchParams.get("weightField") || undefined
+  const weightField = rawWeightField ? resolveField(rawWeightField) || rawWeightField : undefined
   const timeField = ALLOWED_TIME_FIELDS[searchParams.get("timeField") || F.tradeDt] || F.tradeDt
-  const groupBy = searchParams.get("groupBy") || undefined
+  const rawGroupBy = searchParams.get("groupBy")
+  const groupBy = rawGroupBy ? resolveField(rawGroupBy) || rawGroupBy : undefined
   const topN = Math.min(Math.max(Number(searchParams.get("topN") || "5"), 1), 20)
   const filtersJson = searchParams.get("filters") || ""
 

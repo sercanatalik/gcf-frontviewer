@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { WEIGHTED_FIELDS, F, IDENTIFIER_RE } from "@/lib/field-defs"
+import { WEIGHTED_FIELDS, F, IDENTIFIER_RE, resolveField } from "@/lib/field-defs"
 
 /**
  * Strip asofDate entries from serialised filters and return the date value.
@@ -22,8 +22,9 @@ function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: stri
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const fieldName = searchParams.get("fieldName") || F.cashOut
-  const groupBy = searchParams.get("groupBy") || undefined
+  const fieldName = resolveField(searchParams.get("fieldName") || "") || F.cashOut
+  const rawGroupBy = searchParams.get("groupBy")
+  const groupBy = rawGroupBy ? resolveField(rawGroupBy) || rawGroupBy : undefined
   const filtersJson = searchParams.get("filters") || ""
 
   if (!IDENTIFIER_RE.test(fieldName)) {
