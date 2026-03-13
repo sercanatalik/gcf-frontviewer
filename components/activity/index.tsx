@@ -17,6 +17,7 @@ import { SummaryCards } from "./summary-cards"
 import { TradeFlowCards } from "./trade-flow-cards"
 import { ComparisonTable } from "./comparison-table"
 import { ComparisonChart } from "./comparison-chart"
+import { NewTradesTable } from "./new-trades-table"
 import type { DimensionOption } from "./types"
 
 const DIMENSION_OPTIONS: DimensionOption[] = [
@@ -31,6 +32,7 @@ const DIMENSION_OPTIONS: DimensionOption[] = [
 ]
 
 const PERIOD_OPTIONS = [
+  { value: "1", label: "1 Day" },
   { value: "7", label: "1 Week" },
   { value: "14", label: "2 Weeks" },
   { value: "30", label: "1 Month" },
@@ -38,6 +40,8 @@ const PERIOD_OPTIONS = [
   { value: "90", label: "3 Months" },
   { value: "180", label: "6 Months" },
   { value: "365", label: "1 Year" },
+  { value: "548", label: "18 Months" },
+  { value: "730", label: "2 Years" },
 ]
 
 function LoadingSkeleton() {
@@ -145,6 +149,9 @@ export function ActivityComparison() {
             <ComparisonChart data={data.grouped} groupLabel={currentLabel} />
             <ComparisonTable data={data.grouped} groupLabel={currentLabel} daysAgo={daysAgo} />
           </div>
+
+          {/* New Trades */}
+          <NewTradesTable data={data.newTrades ?? []} daysAgo={daysAgo} />
         </>
       )}
     </div>

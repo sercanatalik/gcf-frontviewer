@@ -48,14 +48,14 @@ function TrendIndicator({ change }: { change: number }) {
 
 const metrics = [
   {
-    key: "fundingAmount",
+    key: "totalFunding",
     label: "Funding Amount",
     icon: DollarSign,
     format: formatCurrency,
     color: "oklch(0.62 0.17 255)",
   },
   {
-    key: "collateralAmount",
+    key: "totalCollateral",
     label: "Collateral Amount",
     icon: BarChart3,
     format: formatCurrency,

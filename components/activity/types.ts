@@ -21,12 +21,29 @@ export interface TradeFlow {
 export interface PeriodTotals {
   period: string
   asOfDate: string
-  fundingAmount: number
-  collateralAmount: number
+  totalFunding: number
+  totalCollateral: number
   avgSpread: number
   tradeCount: number
   clientCount: number
   bookCount: number
+}
+
+export interface NewTrade {
+  tradeId: string
+  counterParty: string
+  productType: string
+  side: string
+  fundingAmount: number
+  collateralAmount: number
+  cashOut: number
+  fundingMargin: number
+  hmsDesk: string
+  hms_region: string
+  tradeDt: string
+  maturityDt: string
+  fundingCurrency: string
+  collateralDesc: string
 }
 
 export interface ActivityData {
@@ -36,6 +53,7 @@ export interface ActivityData {
     current: PeriodTotals
     previous: PeriodTotals
   }
+  newTrades: NewTrade[]
   meta: {
     groupBy: string
     daysAgo: number

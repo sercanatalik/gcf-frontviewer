@@ -189,6 +189,12 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
               Trends
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/activity">
+              <BarChart3 className="size-4 text-cyan-500" />
+              Activity
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />

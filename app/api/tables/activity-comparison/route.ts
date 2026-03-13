@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters, splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
-import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY } from "@/lib/field-defs"
+import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY, TRADE_SELECT_EXPR } from "@/lib/field-defs"
 
 /**
  * Activity Comparison API
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const groupBy = searchParams.get("groupBy") || F.hms_region
   const daysAgo = Math.min(
     Math.max(Number(searchParams.get("daysAgo") || "30"), 1),
-    365,
+    730,
   )
   const filtersJson = searchParams.get("filters") || ""
 
@@ -36,20 +36,22 @@ export async function GET(request: NextRequest) {
     const { asofClause, filterWhere } = splitAsofDateClauses(clauses, hasAsofDate)
     const latestDateExpr = buildLatestDateExpr(asofClause, hasAsofDate)
 
+    const prevDateCTE = `
+      SELECT max(${F.asofDate}) AS d
+      FROM gcf_risk_mv FINAL
+      WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({daysAgo:UInt32})
+    `
+
     // ── 1. Grouped comparison by dimension ──────────────────────────
     const groupedQuery = `
       WITH
         latestDate AS (${latestDateExpr}),
-        prevDate AS (
-          SELECT max(${F.asofDate}) AS d
-          FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({daysAgo:UInt32})
-        ),
+        prevDate AS (${prevDateCTE}),
         current AS (
           SELECT
             ${groupBy} AS grp,
-            sum(toFloat64OrZero(toString(${F.fundingAmount})))  AS fundingAmount,
-            sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS collateralAmount,
+            sum(toFloat64OrZero(toString(${F.fundingAmount})))  AS totalFunding,
+            sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS totalCollateral,
             sum(toFloat64OrZero(toString(${F.fundingMargin})) * toFloat64OrZero(toString(${F.fundingAmount})))
               / nullIf(sum(toFloat64OrZero(toString(${F.fundingAmount}))), 0) AS avgSpread,
             countDistinct(${F.tradeId}) AS tradeCount
@@ -60,8 +62,8 @@ export async function GET(request: NextRequest) {
         previous AS (
           SELECT
             ${groupBy} AS grp,
-            sum(toFloat64OrZero(toString(${F.fundingAmount})))  AS fundingAmount,
-            sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS collateralAmount,
+            sum(toFloat64OrZero(toString(${F.fundingAmount})))  AS totalFunding,
+            sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS totalCollateral,
             sum(toFloat64OrZero(toString(${F.fundingMargin})) * toFloat64OrZero(toString(${F.fundingAmount})))
               / nullIf(sum(toFloat64OrZero(toString(${F.fundingAmount}))), 0) AS avgSpread,
             countDistinct(${F.tradeId}) AS tradeCount
@@ -71,28 +73,24 @@ export async function GET(request: NextRequest) {
         )
       SELECT
         coalesce(c.grp, p.grp) AS group,
-        coalesce(c.fundingAmount, 0) AS currentFunding,
-        coalesce(p.fundingAmount, 0) AS previousFunding,
-        coalesce(c.collateralAmount, 0) AS currentCollateral,
-        coalesce(p.collateralAmount, 0) AS previousCollateral,
+        coalesce(c.totalFunding, 0) AS currentFunding,
+        coalesce(p.totalFunding, 0) AS previousFunding,
+        coalesce(c.totalCollateral, 0) AS currentCollateral,
+        coalesce(p.totalCollateral, 0) AS previousCollateral,
         coalesce(c.avgSpread, 0) AS currentSpread,
         coalesce(p.avgSpread, 0) AS previousSpread,
         coalesce(c.tradeCount, 0) AS currentTradeCount,
         coalesce(p.tradeCount, 0) AS previousTradeCount
       FROM current c
       FULL OUTER JOIN previous p ON c.grp = p.grp
-      ORDER BY coalesce(c.fundingAmount, 0) DESC
+      ORDER BY coalesce(c.totalFunding, 0) DESC
     `
 
     // ── 2. Matured & new trade summary ──────────────────────────────
     const tradeFlowQuery = `
       WITH
         latestDate AS (${latestDateExpr}),
-        prevDate AS (
-          SELECT max(${F.asofDate}) AS d
-          FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({daysAgo:UInt32})
-        ),
+        prevDate AS (${prevDateCTE}),
         currentTrades AS (
           SELECT DISTINCT ${F.tradeId}
           FROM gcf_risk_mv FINAL
@@ -115,16 +113,12 @@ export async function GET(request: NextRequest) {
     const totalsQuery = `
       WITH
         latestDate AS (${latestDateExpr}),
-        prevDate AS (
-          SELECT max(${F.asofDate}) AS d
-          FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({daysAgo:UInt32})
-        )
+        prevDate AS (${prevDateCTE})
       SELECT
         'current' AS period,
         formatDateTime((SELECT d FROM latestDate), '%Y-%m-%d') AS asOfDate,
-        sum(toFloat64OrZero(toString(${F.fundingAmount}))) AS fundingAmount,
-        sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS collateralAmount,
+        sum(toFloat64OrZero(toString(${F.fundingAmount}))) AS totalFunding,
+        sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS totalCollateral,
         sum(toFloat64OrZero(toString(${F.fundingMargin})) * toFloat64OrZero(toString(${F.fundingAmount})))
           / nullIf(sum(toFloat64OrZero(toString(${F.fundingAmount}))), 0) AS avgSpread,
         countDistinct(${F.tradeId}) AS tradeCount,
@@ -136,8 +130,8 @@ export async function GET(request: NextRequest) {
       SELECT
         'previous' AS period,
         formatDateTime((SELECT d FROM prevDate), '%Y-%m-%d') AS asOfDate,
-        sum(toFloat64OrZero(toString(${F.fundingAmount}))) AS fundingAmount,
-        sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS collateralAmount,
+        sum(toFloat64OrZero(toString(${F.fundingAmount}))) AS totalFunding,
+        sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS totalCollateral,
         sum(toFloat64OrZero(toString(${F.fundingMargin})) * toFloat64OrZero(toString(${F.fundingAmount})))
           / nullIf(sum(toFloat64OrZero(toString(${F.fundingAmount}))), 0) AS avgSpread,
         countDistinct(${F.tradeId}) AS tradeCount,
@@ -147,17 +141,44 @@ export async function GET(request: NextRequest) {
       WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
     `
 
+    // ── 4. New trades between periods (detail rows) ─────────────────
+    // Use a subquery for filtering to avoid alias conflict:
+    // TRADE_SELECT_EXPR aliases date columns as strings (e.g. formatDateTime(asofDate) AS asofDate)
+    // which would clash with the WHERE clause comparing asofDate to a Date value.
+    const newTradesQuery = `
+      WITH
+        latestDate AS (${latestDateExpr}),
+        prevDate AS (${prevDateCTE}),
+        previousIds AS (
+          SELECT DISTINCT ${F.tradeId}
+          FROM gcf_risk_mv FINAL
+          WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
+        ),
+        filtered AS (
+          SELECT *
+          FROM gcf_risk_mv FINAL
+          WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
+            AND ${F.tradeId} NOT IN (SELECT ${F.tradeId} FROM previousIds)
+        )
+      SELECT ${TRADE_SELECT_EXPR}
+      FROM filtered
+      ORDER BY toFloat64OrZero(toString(${F.fundingAmount})) DESC
+      LIMIT 500
+    `
+
     const queryParams = { daysAgo, ...params }
 
-    const [groupedResult, tradeFlowResult, totalsResult] = await Promise.all([
+    const [groupedResult, tradeFlowResult, totalsResult, newTradesResult] = await Promise.all([
       client.query({ query: groupedQuery, query_params: queryParams, format: "JSONEachRow" }),
       client.query({ query: tradeFlowQuery, query_params: queryParams, format: "JSONEachRow" }),
       client.query({ query: totalsQuery, query_params: queryParams, format: "JSONEachRow" }),
+      client.query({ query: newTradesQuery, query_params: queryParams, format: "JSONEachRow" }),
     ])
 
     const grouped = await groupedResult.json()
     const tradeFlow = (await tradeFlowResult.json()) as Array<Record<string, unknown>>
     const totals = (await totalsResult.json()) as Array<Record<string, unknown>>
+    const newTrades = await newTradesResult.json()
 
     const currentTotals = totals.find((r) => r.period === "current") || {}
     const previousTotals = totals.find((r) => r.period === "previous") || {}
@@ -167,6 +188,7 @@ export async function GET(request: NextRequest) {
         grouped,
         tradeFlow: tradeFlow[0] || {},
         totals: { current: currentTotals, previous: previousTotals },
+        newTrades,
         meta: { groupBy, daysAgo },
       },
       { headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } },
