@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (asOfDate && asOfDate !== "__latest__") {
-      whereClauses.push("asofDate <= {_asof:String}")
+      whereClauses.push(`${F.asofDate} <= {_asof:String}`)
       queryParams["_asof"] = asOfDate
     }
 

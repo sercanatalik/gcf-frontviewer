@@ -20,16 +20,16 @@ export async function GET(request: NextRequest) {
 
     // Always scope to an asofDate — fall back to the latest available
     if (!hasAsofDate) {
-      clauses.push("gcf_risk_mv.asofDate = (SELECT max(asofDate) FROM gcf_risk_mv)")
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
     }
 
     // Exclude trades with zero cash out
-    clauses.push("toFloat64OrZero(toString(gcf_risk_mv.cashOut)) != 0")
+    clauses.push(`toFloat64OrZero(toString(gcf_risk_mv.${F.cashOut})) != 0`)
 
     // Date window: for maturity mode, only future maturities within N days
     if (sortMode === "maturity") {
-      clauses.push("gcf_risk_mv.maturityDt >= gcf_risk_mv.asofDate")
-      clauses.push(`gcf_risk_mv.maturityDt <= gcf_risk_mv.asofDate + toIntervalDay(${relativeDt})`)
+      clauses.push(`gcf_risk_mv.${F.maturityDt} >= gcf_risk_mv.${F.asofDate}`)
+      clauses.push(`gcf_risk_mv.${F.maturityDt} <= gcf_risk_mv.${F.asofDate} + toIntervalDay(${relativeDt})`)
     }
 
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient, isTableAllowed } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { F } from "@/lib/field-defs"
 
 const MAX_LIMIT = 1000000
 const DEFAULT_LIMIT = 1000
@@ -81,19 +82,19 @@ export async function GET(
 
     if (asOfDate === "__latest__") {
       const maxResult = await clickhouse.query({
-        query: `SELECT max(asofDate) as max_date FROM ${table}`,
+        query: `SELECT max(${F.asofDate}) as max_date FROM ${table}`,
         format: "JSONEachRow",
       })
       const maxRows = await maxResult.json<{ max_date: string }>()
       const maxDate = maxRows[0]?.max_date
       if (maxDate) {
         const pName = `p${paramIndex++}`
-        whereClauses.push(`asofDate = {${pName}:String}`)
+        whereClauses.push(`${F.asofDate} = {${pName}:String}`)
         queryParams[pName] = maxDate
       }
     } else if (asOfDate) {
       const pName = `p${paramIndex++}`
-      whereClauses.push(`asofDate = {${pName}:String}`)
+      whereClauses.push(`${F.asofDate} = {${pName}:String}`)
       queryParams[pName] = asOfDate
     }
 

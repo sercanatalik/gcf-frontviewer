@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { allowedTables } from "@/lib/clickhouse"
 import { clickhouseToPerspective } from "@/lib/clickhouse-type-map"
+import { F } from "@/lib/field-defs"
 
 export async function GET() {
   try {
@@ -43,12 +44,12 @@ export async function GET() {
         const countRows = await countResult.json<{ count: string }>()
         const rowCount = Number(countRows[0]?.count ?? 0)
 
-        const hasAsOfDate = columns.some((col) => col.name === "asofDate")
+        const hasAsOfDate = columns.some((col) => col.name === F.asofDate)
 
         let latestAsOfDate: string | undefined
         if (hasAsOfDate) {
           const maxResult = await clickhouse.query({
-            query: `SELECT max(asofDate) as max_date FROM ${name}`,
+            query: `SELECT max(${F.asofDate}) as max_date FROM ${name}`,
             format: "JSONEachRow",
           })
           const maxRows = await maxResult.json<{ max_date: string }>()
