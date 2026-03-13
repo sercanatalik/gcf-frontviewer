@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       clauses.push(`${F.asofDate} <= {_asof:String}`)
       params["_asof"] = asofDate
     } else {
-      clauses.push(`${F.asofDate} <= (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
+      clauses.push(`${F.asofDate} <= (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
 
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       SELECT
         ${F.asofDate}${groupByExpr},
         ${selectExpr}
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       ${whereStr}
       GROUP BY ${F.asofDate}${groupByExpr}
       ORDER BY ${F.asofDate}${groupByExpr}
