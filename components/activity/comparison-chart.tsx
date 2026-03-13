@@ -127,9 +127,10 @@ export function ComparisonChart({ data, groupLabel }: ComparisonChartProps) {
               />
               <Tooltip
                 formatter={(value: number) => formatter(value)}
+                cursor={{ fill: "var(--muted)", opacity: 0.5 }}
                 contentStyle={{
-                  backgroundColor: "hsl(var(--popover))",
-                  border: "1px solid hsl(var(--border))",
+                  backgroundColor: "var(--popover)",
+                  border: "1px solid var(--border)",
                   borderRadius: "8px",
                   fontSize: "12px",
                 }}
@@ -138,13 +139,13 @@ export function ComparisonChart({ data, groupLabel }: ComparisonChartProps) {
               <Bar
                 dataKey="current"
                 name="Current"
-                fill="oklch(0.62 0.17 255)"
+                fill="hsl(217, 91%, 60%)"
                 radius={[3, 3, 0, 0]}
               />
               <Bar
                 dataKey="previous"
                 name="Previous"
-                fill="oklch(0.62 0.17 255 / 0.35)"
+                fill="hsl(217, 60%, 68%)"
                 radius={[3, 3, 0, 0]}
               />
             </BarChart>

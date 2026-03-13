@@ -161,9 +161,9 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
       <div className="flex items-start gap-4">
         <button
           onClick={() => router.back()}
-          className="mt-1 flex size-9 shrink-0 items-center justify-center rounded-lg border bg-card transition-colors hover:bg-muted"
+          className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl border bg-card transition-colors hover:bg-muted"
         >
-          <ArrowLeft className="size-4" />
+          <ArrowLeft className="size-7" />
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">

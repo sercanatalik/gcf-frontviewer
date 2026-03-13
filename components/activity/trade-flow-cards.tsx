@@ -17,24 +17,24 @@ export function TradeFlowCards({ tradeFlow, daysAgo }: TradeFlowCardsProps) {
       description: "Booked since previous snapshot",
       value: tradeFlow.newTrades,
       icon: LogIn,
-      color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
     },
     {
       label: "Matured Trades",
       description: "Exited since previous snapshot",
       value: tradeFlow.maturedTrades,
       icon: LogOut,
-      color: "text-red-600 dark:text-red-400",
-      bg: "bg-red-500/10 dark:bg-red-500/15",
+      color: "text-red-400",
+      bg: "bg-red-400/10",
     },
     {
       label: "Rolled / Continuing",
       description: "Present in both snapshots",
       value: tradeFlow.rolledTrades,
       icon: RefreshCw,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-500/10 dark:bg-blue-500/15",
+      color: "text-chart-3",
+      bg: "bg-chart-3/10",
     },
     {
       label: "Net Change",
@@ -42,11 +42,11 @@ export function TradeFlowCards({ tradeFlow, daysAgo }: TradeFlowCardsProps) {
       value: tradeFlow.totalCurrent - tradeFlow.totalPrevious,
       icon: ArrowRightLeft,
       color: tradeFlow.totalCurrent >= tradeFlow.totalPrevious
-        ? "text-emerald-600 dark:text-emerald-400"
-        : "text-red-600 dark:text-red-400",
+        ? "text-emerald-500"
+        : "text-red-400",
       bg: tradeFlow.totalCurrent >= tradeFlow.totalPrevious
-        ? "bg-emerald-500/10 dark:bg-emerald-500/15"
-        : "bg-red-500/10 dark:bg-red-500/15",
+        ? "bg-emerald-500/10"
+        : "bg-red-400/10",
     },
   ]
 
@@ -96,7 +96,7 @@ export function TradeFlowCards({ tradeFlow, daysAgo }: TradeFlowCardsProps) {
             <span className="w-28 shrink-0 text-right">New</span>
             <div className="h-5 flex-1 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-emerald-500/70 transition-all"
+                className="h-full rounded-full bg-emerald-500/60 transition-all"
                 style={{ width: `${(tradeFlow.newTrades / maxVal) * 100}%` }}
               />
             </div>
@@ -106,7 +106,7 @@ export function TradeFlowCards({ tradeFlow, daysAgo }: TradeFlowCardsProps) {
             <span className="w-28 shrink-0 text-right">Matured</span>
             <div className="h-5 flex-1 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-red-500/70 transition-all"
+                className="h-full rounded-full bg-red-400/60 transition-all"
                 style={{ width: `${(tradeFlow.maturedTrades / maxVal) * 100}%` }}
               />
             </div>
@@ -116,7 +116,7 @@ export function TradeFlowCards({ tradeFlow, daysAgo }: TradeFlowCardsProps) {
             <span className="w-28 shrink-0 text-right">Continuing</span>
             <div className="h-5 flex-1 overflow-hidden rounded-full bg-muted">
               <div
-                className="h-full rounded-full bg-blue-500/70 transition-all"
+                className="h-full rounded-full bg-chart-3/60 transition-all"
                 style={{ width: `${(tradeFlow.rolledTrades / maxVal) * 100}%` }}
               />
             </div>

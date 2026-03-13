@@ -25,24 +25,23 @@ interface SummaryCardsProps {
 function TrendIndicator({ change }: { change: number }) {
   if (Math.abs(change) < 0.01) {
     return (
-      <Badge variant="secondary" className="gap-1 font-mono text-[10px]">
+      <Badge variant="outline" className="gap-1 font-mono text-[10px]">
         <Minus className="size-3" />
         0.0%
       </Badge>
     )
   }
-  if (change > 0) {
-    return (
-      <Badge variant="default" className="gap-1 bg-emerald-500/15 font-mono text-[10px] text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
-        <TrendingUp className="size-3" />
-        {formatPercent(change)}
-      </Badge>
-    )
-  }
+  const isUp = change > 0
   return (
-    <Badge variant="destructive" className="gap-1 font-mono text-[10px]">
-      <TrendingDown className="size-3" />
-      {formatPercent(change)}
+    <Badge variant="outline" className="gap-1 font-mono text-[10px]">
+      {isUp ? (
+        <TrendingUp className="size-3 text-emerald-500" />
+      ) : (
+        <TrendingDown className="size-3 text-red-400" />
+      )}
+      <span className={isUp ? "text-emerald-500" : "text-red-400"}>
+        {formatPercent(change)}
+      </span>
     </Badge>
   )
 }

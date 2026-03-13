@@ -41,8 +41,8 @@ function ChangeCell({ current, previous, format }: { current: number; previous: 
       <span className="font-mono text-xs">{format(current)}</span>
       {previous > 0 && (
         <span className={`flex items-center gap-0.5 text-[10px] ${
-          change > 0.5 ? "text-emerald-600 dark:text-emerald-400" :
-          change < -0.5 ? "text-red-600 dark:text-red-400" :
+          change > 0.5 ? "text-emerald-500" :
+          change < -0.5 ? "text-red-400" :
           "text-muted-foreground"
         }`}>
           {change > 0.5 ? <TrendingUp className="size-2.5" /> :
@@ -149,7 +149,7 @@ export function ComparisonTable({ data, groupLabel, daysAgo }: ComparisonTablePr
                       <div className="flex items-center gap-2">
                         <span className="max-w-40 truncate">{row.group || "(blank)"}</span>
                         {isNew && (
-                          <Badge variant="default" className="bg-emerald-500/15 text-[9px] text-emerald-600 dark:bg-emerald-500/25 dark:text-emerald-400">
+                          <Badge variant="outline" className="text-[9px] text-emerald-500">
                             NEW
                           </Badge>
                         )}

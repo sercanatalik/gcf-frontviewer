@@ -71,8 +71,8 @@ export function NewTradesTable({ data, daysAgo }: NewTradesTableProps) {
     <Card>
       <CardHeader>
         <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10 dark:bg-emerald-500/15">
-            <LogIn className="size-4 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex size-7 items-center justify-center rounded-md bg-emerald-500/10">
+            <LogIn className="size-4 text-emerald-500" />
           </div>
           <div>
             <CardTitle>New Trades</CardTitle>
