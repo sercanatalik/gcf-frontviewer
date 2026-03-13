@@ -9,26 +9,28 @@ import {
   TrendingDown,
   Banknote,
   BarChart3,
-  Clock,
-  Hash,
-  Percent,
   Users,
   Building2,
   Globe,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn, basePath } from "@/lib/utils"
 import type { KpiMeasure, KpiStatData } from "@/components/dashboard/kpi-cards/types"
 import { formatKpiValue, formatDelta } from "@/components/dashboard/kpi-cards/utils"
 import { HistoricalChart } from "@/components/dashboard/cash-out-chart/historical-chart"
 import { FutureChart } from "@/components/dashboard/cash-out-chart/future-chart"
-import { ChartSkeleton } from "@/components/dashboard/cash-out-chart/chart-skeleton"
-import { filtersStore, filtersActions } from "@/lib/store/filters"
-import { serializeFilters } from "@/lib/filters/serialize"
+import { filtersActions } from "@/lib/store/filters"
+import { useFiltersParam } from "@/hooks/use-filters-param"
 import { deepDiveMeasures, DEEP_DIVE_BREAKDOWN_DIMENSIONS, DEFAULT_RELATIVE_DAYS } from "@/lib/field-defs"
+import { RiskFilter } from "@/components/dashboard/filters/risk-filter"
+import {
+  filterTypes,
+  filterOperators,
+  iconMapping,
+  operatorConfig,
+} from "@/components/dashboard/filters/filter-config"
 
 const DEEP_DIVE_MEASURES = deepDiveMeasures
 
@@ -85,30 +87,16 @@ async function fetchSubBreakdown(
   return res.json()
 }
 
-function buildFilterParam(field: string, value: string, existingFilters: string): string {
-  const deepDiveFilter = [{ field, operator: "is", value: [value] }]
-  if (!existingFilters) return JSON.stringify(deepDiveFilter)
-  try {
-    const existing = JSON.parse(existingFilters) as unknown[]
-    return JSON.stringify([...existing, ...deepDiveFilter])
-  } catch {
-    return JSON.stringify(deepDiveFilter)
-  }
-}
-
 export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
   const router = useRouter()
 
-  const baseFilters = React.useMemo(
-    () => serializeFilters(filtersStore.state.filters),
-    [],
-  )
-  const filtersParam = React.useMemo(
-    () => buildFilterParam(field, value, baseFilters),
-    [field, value, baseFilters],
-  )
+  // Ensure the filter store knows which table to query distinct values from
+  React.useEffect(() => {
+    filtersActions.setActiveTable("gcf_risk_mv")
+  }, [])
 
-  // Inject the deep-dive filter into the store so child chart components pick it up
+  // Inject the deep-dive filter into the store so all queries (including child
+  // chart components) pick it up reactively.
   React.useEffect(() => {
     const id = `__deepdive_${field}`
     filtersActions.addFilter({
@@ -123,8 +111,11 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
     }
   }, [field, value])
 
+  // Reactive: re-serialises whenever the store changes (user adds/removes filters)
+  const filtersParam = useFiltersParam()
+
   const { data: kpiData, isLoading: kpiLoading } = useQuery({
-    queryKey: ["deep-dive-kpi", field, value, baseFilters],
+    queryKey: ["deep-dive-kpi", field, value, filtersParam],
     queryFn: () => fetchKpiSummary(DEEP_DIVE_MEASURES, filtersParam),
     staleTime: 5 * 60 * 1000,
   })
@@ -147,7 +138,7 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
   }, [field])
 
   const breakdownQueries = useQuery({
-    queryKey: ["deep-dive-breakdown", field, value, breakdownDimensions.map((d) => d.groupBy), baseFilters],
+    queryKey: ["deep-dive-breakdown", field, value, breakdownDimensions.map((d) => d.groupBy), filtersParam],
     queryFn: async () => {
       const results: Record<string, SubBreakdown[]> = {}
       await Promise.all(
@@ -183,6 +174,14 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
           </p>
         </div>
       </div>
+
+      {/* Filters */}
+      <RiskFilter
+        filterTypes={filterTypes}
+        filterOperators={filterOperators}
+        iconMapping={iconMapping}
+        operatorConfig={operatorConfig}
+      />
 
       {/* Executive Summary KPIs */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
