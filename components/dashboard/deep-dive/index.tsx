@@ -92,10 +92,8 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
   const router = useRouter()
   const deepDiveId = `__deepdive_${field}`
 
-  // Inject the deep-dive filter synchronously so the very first render already
-  // includes it in filtersParam — avoids a wasted fetch without the filter.
-  const injectedRef = React.useRef(false)
-  if (!injectedRef.current) {
+  // Inject the deep-dive filter before paint and clean up on unmount.
+  React.useLayoutEffect(() => {
     filtersActions.setActiveTable("gcf_risk_mv")
     const exists = filtersStore.state.filters.some((f) => f.id === deepDiveId)
     if (!exists) {
@@ -107,15 +105,10 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
         field,
       })
     }
-    injectedRef.current = true
-  }
-
-  // Clean up the deep-dive filter on unmount
-  React.useEffect(() => {
     return () => {
       filtersActions.removeFilter(deepDiveId)
     }
-  }, [deepDiveId])
+  }, [deepDiveId, field, value])
 
   // Reactive: re-serialises whenever the store changes (user adds/removes filters)
   const filtersParam = useFiltersParam()
