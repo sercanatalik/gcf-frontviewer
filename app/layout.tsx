@@ -1,18 +1,9 @@
-import { Geist, Geist_Mono } from "next/font/google"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
 
 import "@/styles/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { QueryProvider } from "@/components/query-provider"
-
-const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-sans",
-})
-
-const geistMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-})
 
 export default function RootLayout({
   children,
@@ -23,7 +14,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geist.variable} ${geistMono.variable} antialiased`}
+      className={`${GeistSans.variable} ${GeistMono.variable} antialiased`}
     >
       <body>
         <QueryProvider>

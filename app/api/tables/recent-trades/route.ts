@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { TRADE_SELECT_EXPR } from "@/lib/columns"
+import { TRADE_SELECT_EXPR, F } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const limit = Math.min(Number(searchParams.get("limit") || "50"), 200)
   const sortMode = searchParams.get("sort") === "maturity" ? "maturity" : "recent"
-  const sort = sortMode === "maturity" ? "maturityDt ASC" : "tradeDt DESC"
+  const sort = sortMode === "maturity" ? `${F.maturityDt} ASC` : `${F.tradeDt} DESC`
   const relativeDt = Math.min(Math.max(Number(searchParams.get("relativeDt") || "30"), 1), 365)
   const filtersJson = searchParams.get("filters") || ""
 

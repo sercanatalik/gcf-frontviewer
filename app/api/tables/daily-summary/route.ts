@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { F, DAILY_SUMMARY_FIELDS } from "@/lib/field-defs"
 
 const MAX_LIMIT = 1000000
 const DEFAULT_LIMIT = 100000
@@ -35,25 +36,27 @@ export async function GET(request: NextRequest) {
     const whereStr =
       whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : ""
 
+    const summarySelect = DAILY_SUMMARY_FIELDS
+      .map((col) => `sum(toFloat64OrZero(toString(${col}))) AS ${col}`)
+      .join(",\n        ")
+
     const query = `
       SELECT
-        asofDate,
-        sum(toFloat64OrZero(toString(cashOut))) AS cashOut,
-        sum(toFloat64OrZero(toString(fundingAmount))) AS fundingAmount,
-        sum(toFloat64OrZero(toString(collateralAmount))) AS collateralAmount
+        ${F.asofDate},
+        ${summarySelect}
       FROM gcf_risk_mv FINAL
       ${whereStr}
-      GROUP BY asofDate
-      ORDER BY asofDate
+      GROUP BY ${F.asofDate}
+      ORDER BY ${F.asofDate}
       LIMIT ${limit} OFFSET ${offset}
     `
 
     const countQuery = `
       SELECT count() AS count FROM (
-        SELECT asofDate
+        SELECT ${F.asofDate}
         FROM gcf_risk_mv FINAL
         ${whereStr}
-        GROUP BY asofDate
+        GROUP BY ${F.asofDate}
       )
     `
 

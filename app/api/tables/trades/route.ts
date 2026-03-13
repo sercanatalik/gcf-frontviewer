@@ -1,39 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { TRADE_SELECT_EXPR } from "@/lib/columns"
-
-const SEARCH_COLUMNS = [
-  "counterParty",
-  "collateralDesc",
-  "i_ticker",
-  "hmsDesk",
-  "productType",
-  "tradeId",
-  "i_issuerName",
-  "hms_region",
-  "i_isinId",
-  "counterpartyParentName",
-]
-
-const SORTABLE_COLUMNS: Record<string, string> = {
-  tradeDt: "tradeDt",
-  maturityDt: "maturityDt",
-  fundingAmount: "fundingAmount",
-  collateralAmount: "collateralAmount",
-  counterParty: "counterParty",
-  hmsDesk: "hmsDesk",
-  fundingMargin: "fundingMargin",
-  fixedRate: "fixedRate",
-  cashOut: "cashOut",
-}
+import { TRADE_SELECT_EXPR, SEARCH_COLUMNS, SORTABLE_COLUMNS, F } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const limit = Math.min(Number(searchParams.get("limit") || "25"), 200)
   const offset = Math.max(Number(searchParams.get("offset") || "0"), 0)
   const search = (searchParams.get("search") || "").trim()
-  const sortBy = searchParams.get("sortBy") || "tradeDt"
+  const sortBy = searchParams.get("sortBy") || F.tradeDt
   const sortDir = searchParams.get("sortDir") === "asc" ? "ASC" : "DESC"
   const sideFilter = searchParams.get("side") || ""
   const filtersJson = searchParams.get("filters") || ""
@@ -63,7 +38,7 @@ export async function GET(request: NextRequest) {
     }
 
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
-    const sortCol = SORTABLE_COLUMNS[sortBy] || "tradeDt"
+    const sortCol = SORTABLE_COLUMNS[sortBy] || F.tradeDt
 
     // Count query
     const countQuery = `SELECT count() AS total FROM gcf_risk_mv ${whereStr}`

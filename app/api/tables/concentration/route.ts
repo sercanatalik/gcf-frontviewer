@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { F } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const filtersJson = searchParams.get("filters") || ""
-  const groupBy = searchParams.get("groupBy") || "counterpartyParentName"
-  const field = searchParams.get("field") || "fundingAmount"
+  const groupBy = searchParams.get("groupBy") || F.counterpartyParentName
+  const field = searchParams.get("field") || F.fundingAmount
   const topN = Math.min(Math.max(Number(searchParams.get("topN") || "10"), 1), 50)
 
   const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/

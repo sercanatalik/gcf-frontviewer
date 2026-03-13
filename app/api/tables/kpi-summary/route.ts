@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { buildAggExpr } from "@/lib/field-defs"
 
 interface KpiMeasure {
   key: string
   field: string
-  aggregation: "sum" | "count" | "avg" | "max" | "min" | "countDistinct" | "avgBy"
+  aggregation: string
   weightField?: string
 }
 
@@ -13,19 +14,11 @@ function aliasFor(key: string): string {
   return `v_${key}`
 }
 
-function buildAggExpr(m: KpiMeasure): string {
-  const alias = aliasFor(m.key)
-  if (m.aggregation === "avgBy") {
-    if (!m.weightField) throw new Error(`weightField required for avgBy on ${m.key}`)
-    return `sum(toFloat64OrZero(toString(${m.field})) * toFloat64OrZero(toString(${m.weightField}))) / nullIf(sum(toFloat64OrZero(toString(${m.weightField}))), 0) as ${alias}`
-  }
-  if (m.aggregation === "countDistinct") {
-    return `countDistinct(${m.field}) as ${alias}`
-  }
-  if (["sum", "avg", "max", "min"].includes(m.aggregation)) {
-    return `${m.aggregation}(toFloat64OrZero(toString(${m.field}))) as ${alias}`
-  }
-  return `${m.aggregation}(${m.field}) as ${alias}`
+function buildKpiAggExpr(m: KpiMeasure): string {
+  return buildAggExpr(m.field, m.aggregation, {
+    weightField: m.weightField,
+    alias: aliasFor(m.key),
+  })
 }
 
 export async function GET(request: NextRequest) {
@@ -65,7 +58,7 @@ export async function GET(request: NextRequest) {
       : null
 
     const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
-    const aggExprs = measures.map(buildAggExpr).join(", ")
+    const aggExprs = measures.map(buildKpiAggExpr).join(", ")
 
     // If user provided an asOfDate filter, use it to determine the current date;
     // otherwise default to the max available date.

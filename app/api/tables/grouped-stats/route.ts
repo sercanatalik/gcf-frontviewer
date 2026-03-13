@@ -1,24 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { buildAggExpr } from "@/lib/field-defs"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
-
-function buildAggExpr(
-  field: string,
-  aggregation: string,
-  weightField?: string,
-): string {
-  if (aggregation === "avgBy") {
-    if (!weightField) throw new Error("weightField required for avgBy")
-    return `sum(toFloat64OrZero(toString(${field})) * toFloat64OrZero(toString(${weightField}))) / nullIf(sum(toFloat64OrZero(toString(${weightField}))), 0)`
-  }
-  if (aggregation === "countDistinct") return `countDistinct(${field})`
-  if (["sum", "avg", "max", "min"].includes(aggregation)) {
-    return `${aggregation}(toFloat64OrZero(toString(${field})))`
-  }
-  return `${aggregation}(${field})`
-}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -55,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     let aggExpr: string
     try {
-      aggExpr = buildAggExpr(field, aggregation, weightField)
+      aggExpr = buildAggExpr(field, aggregation, { weightField })
     } catch (e) {
       return NextResponse.json(
         { error: (e as Error).message },

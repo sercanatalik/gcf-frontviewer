@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { buildAggExpr } from "@/lib/field-defs"
 
 interface StatMeasure {
   key: string
   field: string
-  aggregation: "countDistinct" | "count"
+  aggregation: string
 }
 
 function aliasFor(key: string): string {
   return `v_${key}`
 }
 
-function buildAggExpr(m: StatMeasure): string {
-  const alias = aliasFor(m.key)
-  if (m.aggregation === "countDistinct") {
-    return `countDistinct(${m.field}) as ${alias}`
-  }
-  return `count(${m.field}) as ${alias}`
+function buildStatAggExpr(m: StatMeasure): string {
+  return buildAggExpr(m.field, m.aggregation, { alias: aliasFor(m.key) })
 }
 
 export async function GET(request: NextRequest) {
@@ -55,7 +52,7 @@ export async function GET(request: NextRequest) {
       : null
 
     const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
-    const aggExprs = measures.map(buildAggExpr).join(", ")
+    const aggExprs = measures.map(buildStatAggExpr).join(", ")
 
     const latestDateExpr = hasAsofDate && asofClause
       ? `SELECT max(asofDate) AS d FROM gcf_risk_mv WHERE ${asofClause}`

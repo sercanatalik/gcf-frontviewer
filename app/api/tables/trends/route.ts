@@ -1,33 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F } from "@/lib/field-defs"
 
 const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
-
-const ALLOWED_AGGREGATIONS = ["sum", "avg", "count", "countDistinct", "avgBy"]
-
-const ALLOWED_TIME_FIELDS: Record<string, string> = {
-  tradeDt: "tradeDt",
-  startDt: "startDt",
-  maturityDt: "maturityDt",
-}
-
-function buildAggExpr(
-  field: string,
-  aggregation: string,
-  weightField?: string,
-): string {
-  if (aggregation === "avgBy") {
-    if (!weightField) throw new Error("weightField required for avgBy")
-    return `sum(toFloat64OrZero(toString(${field})) * toFloat64OrZero(toString(${weightField}))) / nullIf(sum(toFloat64OrZero(toString(${weightField}))), 0)`
-  }
-  if (aggregation === "countDistinct") return `countDistinct(${field})`
-  if (aggregation === "count") return `count()`
-  if (["sum", "avg"].includes(aggregation)) {
-    return `${aggregation}(toFloat64OrZero(toString(${field})))`
-  }
-  return `sum(toFloat64OrZero(toString(${field})))`
-}
 
 /**
  * Trends API: time-series data grouped by a date column (tradeDt by default),
@@ -44,10 +20,10 @@ function buildAggExpr(
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const field = searchParams.get("field") || "fundingAmount"
+  const field = searchParams.get("field") || F.fundingAmount
   const aggregation = searchParams.get("aggregation") || "sum"
   const weightField = searchParams.get("weightField") || undefined
-  const timeField = ALLOWED_TIME_FIELDS[searchParams.get("timeField") || "tradeDt"] || "tradeDt"
+  const timeField = ALLOWED_TIME_FIELDS[searchParams.get("timeField") || F.tradeDt] || F.tradeDt
   const groupBy = searchParams.get("groupBy") || undefined
   const topN = Math.min(Math.max(Number(searchParams.get("topN") || "5"), 1), 20)
   const filtersJson = searchParams.get("filters") || ""
@@ -55,7 +31,7 @@ export async function GET(request: NextRequest) {
   if (!IDENTIFIER_RE.test(field)) {
     return NextResponse.json({ error: "Invalid field" }, { status: 400 })
   }
-  if (!ALLOWED_AGGREGATIONS.includes(aggregation)) {
+  if (!(ALLOWED_AGGREGATIONS as readonly string[]).includes(aggregation)) {
     return NextResponse.json({ error: "Invalid aggregation" }, { status: 400 })
   }
   if (groupBy && !IDENTIFIER_RE.test(groupBy)) {
@@ -80,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     let aggExpr: string
     try {
-      aggExpr = buildAggExpr(field, aggregation, weightField)
+      aggExpr = buildAggExpr(field, aggregation, { weightField })
     } catch (e) {
       return NextResponse.json({ error: (e as Error).message }, { status: 400 })
     }
