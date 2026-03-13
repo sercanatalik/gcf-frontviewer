@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
         totals: { current: currentTotals, previous: previousTotals },
         meta: { groupBy, daysAgo },
       },
-      { headers: { "Cache-Control": "public, max-age=60, s-maxage=60" } },
+      { headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } },
     )
   } catch (error) {
     console.error("Activity comparison error:", error)

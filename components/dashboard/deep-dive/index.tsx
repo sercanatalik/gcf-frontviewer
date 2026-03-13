@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn, basePath } from "@/lib/utils"
+import { formatCurrencyCompact as formatCurrency } from "@/lib/format"
 import type { KpiMeasure, KpiStatData } from "@/components/dashboard/kpi-cards/types"
 import { formatKpiValue, formatDelta } from "@/components/dashboard/kpi-cards/utils"
 import { HistoricalChart } from "@/components/dashboard/cash-out-chart/historical-chart"
@@ -142,8 +143,10 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
     return dims.filter((d) => d.groupBy !== field).slice(0, 4)
   }, [field])
 
+  const breakdownKey = React.useMemo(() => breakdownDimensions.map((d) => d.groupBy).join(","), [breakdownDimensions])
+
   const breakdownQueries = useQuery({
-    queryKey: ["deep-dive-breakdown", field, value, breakdownDimensions.map((d) => d.groupBy), filtersParam],
+    queryKey: ["deep-dive-breakdown", field, value, breakdownKey, filtersParam],
     queryFn: async () => {
       const results: Record<string, SubBreakdown[]> = {}
       await Promise.all(
@@ -346,15 +349,6 @@ function TrendBadge({ change }: { change: number }) {
       {formatDelta(change)}
     </span>
   )
-}
-
-function formatCurrency(value: number): string {
-  const sign = value < 0 ? "-" : ""
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
-  return `${sign}$${abs.toFixed(0)}`
 }
 
 function BreakdownList({ rows }: { rows: SubBreakdown[] }) {
