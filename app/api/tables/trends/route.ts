@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F } from "@/lib/field-defs"
-
-const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
+import { ALLOWED_TIME_FIELDS, ALLOWED_AGGREGATIONS, buildAggExpr, F, IDENTIFIER_RE } from "@/lib/field-defs"
 
 /**
  * Trends API: time-series data grouped by a date column (tradeDt by default),

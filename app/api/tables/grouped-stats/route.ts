@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { buildAggExpr, F } from "@/lib/field-defs"
-
-const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
+import { buildAggExpr, F, IDENTIFIER_RE } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)

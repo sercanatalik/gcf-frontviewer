@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { F } from "@/lib/field-defs"
-
-const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
-
-const ALLOWED_GROUP_BY = new Set([
-  F.hms_region,
-  F.hmsSL1,
-  F.hmsSL2,
-  F.hmsBook,
-  F.hmsDesk,
-  F.productType,
-  F.counterpartyParentName,
-  F.cp_type,
-])
+import { buildWhereClausesFromFilters, splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
+import { F, IDENTIFIER_RE, ALLOWED_GROUP_BY } from "@/lib/field-defs"
 
 /**
  * Activity Comparison API
@@ -46,18 +33,8 @@ export async function GET(request: NextRequest) {
       ? buildWhereClausesFromFilters(filtersJson)
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
-    const nonAsofClauses = hasAsofDate
-      ? clauses.filter((c) => !c.includes(F.asofDate))
-      : clauses
-    const asofClause = hasAsofDate
-      ? clauses.find((c) => c.includes(F.asofDate))
-      : null
-
-    const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
-
-    const latestDateExpr = hasAsofDate && asofClause
-      ? `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL WHERE ${asofClause}`
-      : `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL`
+    const { asofClause, filterWhere } = splitAsofDateClauses(clauses, hasAsofDate)
+    const latestDateExpr = buildLatestDateExpr(asofClause, hasAsofDate)
 
     // ── 1. Grouped comparison by dimension ──────────────────────────
     const groupedQuery = `

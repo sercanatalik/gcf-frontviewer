@@ -135,3 +135,32 @@ export function buildWhereClausesFromFilters(filtersJson: string): {
 
   return { clauses, params, hasAsofDate }
 }
+
+/**
+ * Split asofDate clauses from the rest of the filter clauses.
+ * Many API routes need to handle asofDate separately (e.g. for CTE subqueries
+ * that determine the latest/previous snapshot date).
+ */
+export function splitAsofDateClauses(clauses: string[], hasAsofDate: boolean): {
+  nonAsofClauses: string[]
+  asofClause: string | null
+  filterWhere: string
+} {
+  const nonAsofClauses = hasAsofDate
+    ? clauses.filter((c) => !c.includes(F.asofDate))
+    : clauses
+  const asofClause = hasAsofDate
+    ? clauses.find((c) => c.includes(F.asofDate)) ?? null
+    : null
+  const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
+  return { nonAsofClauses, asofClause, filterWhere }
+}
+
+/**
+ * Build a latestDate CTE expression, optionally constrained by an asOfDate filter.
+ */
+export function buildLatestDateExpr(asofClause: string | null, hasAsofDate: boolean): string {
+  return hasAsofDate && asofClause
+    ? `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL WHERE ${asofClause}`
+    : `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL`
+}

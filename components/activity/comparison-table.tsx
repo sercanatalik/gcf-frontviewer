@@ -34,7 +34,6 @@ type SortDir = "asc" | "desc"
 
 function ChangeCell({ current, previous, format }: { current: number; previous: number; format: (v: number) => string }) {
   const change = calcChange(current, previous)
-  const diff = current - previous
 
   return (
     <div className="flex flex-col items-end gap-0.5">
@@ -52,6 +51,18 @@ function ChangeCell({ current, previous, format }: { current: number; previous: 
         </span>
       )}
     </div>
+  )
+}
+
+function SortHeader({ field, children, onSort }: { field: SortField; children: React.ReactNode; onSort: (field: SortField) => void }) {
+  return (
+    <button
+      className="flex items-center gap-1 hover:text-foreground"
+      onClick={() => onSort(field)}
+    >
+      {children}
+      <ArrowUpDown className="size-3 text-muted-foreground/50" />
+    </button>
   )
 }
 
@@ -96,18 +107,6 @@ export function ComparisonTable({ data, groupLabel, daysAgo }: ComparisonTablePr
     )
   }, [data])
 
-  function SortHeader({ field, children }: { field: SortField; children: React.ReactNode }) {
-    return (
-      <button
-        className="flex items-center gap-1 hover:text-foreground"
-        onClick={() => toggleSort(field)}
-      >
-        {children}
-        <ArrowUpDown className="size-3 text-muted-foreground/50" />
-      </button>
-    )
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -127,19 +126,19 @@ export function ComparisonTable({ data, groupLabel, daysAgo }: ComparisonTablePr
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead className="sticky left-0 z-10 bg-muted/50">
-                  <SortHeader field="group">{groupLabel}</SortHeader>
+                  <SortHeader onSort={toggleSort} field="group">{groupLabel}</SortHeader>
                 </TableHead>
                 <TableHead className="text-right">
-                  <SortHeader field="currentFunding">Funding</SortHeader>
+                  <SortHeader onSort={toggleSort} field="currentFunding">Funding</SortHeader>
                 </TableHead>
                 <TableHead className="text-right">
-                  <SortHeader field="currentCollateral">Collateral</SortHeader>
+                  <SortHeader onSort={toggleSort} field="currentCollateral">Collateral</SortHeader>
                 </TableHead>
                 <TableHead className="text-right">
-                  <SortHeader field="currentSpread">Avg Spread</SortHeader>
+                  <SortHeader onSort={toggleSort} field="currentSpread">Avg Spread</SortHeader>
                 </TableHead>
                 <TableHead className="text-right">
-                  <SortHeader field="currentTradeCount">Trades</SortHeader>
+                  <SortHeader onSort={toggleSort} field="currentTradeCount">Trades</SortHeader>
                 </TableHead>
                 <TableHead className="text-right text-muted-foreground/60">
                   Prev Funding
