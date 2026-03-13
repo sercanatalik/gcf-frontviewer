@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     const query = `
       SELECT DISTINCT ${expr} AS value
-      FROM ${table}
+      FROM ${table} FINAL
       WHERE ${column} IS NOT NULL${isDateColumn ? "" : ` AND toString(${column}) != ''`}
       ORDER BY value
       LIMIT 1000

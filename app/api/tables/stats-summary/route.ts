@@ -55,21 +55,21 @@ export async function GET(request: NextRequest) {
     const aggExprs = measures.map(buildStatAggExpr).join(", ")
 
     const latestDateExpr = hasAsofDate && asofClause
-      ? `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv WHERE ${asofClause}`
-      : `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv`
+      ? `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL WHERE ${asofClause}`
+      : `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL`
 
     const query = `
       WITH
         latestDate AS (${latestDateExpr}),
-        prevDate AS (SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({relativeDays:UInt32}))
+        prevDate AS (SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({relativeDays:UInt32}))
       SELECT
         'current' AS period, ${aggExprs}
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
       UNION ALL
       SELECT
         'previous' AS period, ${aggExprs}
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
     `
 

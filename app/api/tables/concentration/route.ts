@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
     if (!hasAsofDate) {
-      clauses.push(`${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
+      clauses.push(`${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
     const whereStr = `WHERE ${clauses.join(" AND ")}`
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
           SELECT
             ${groupBy} AS name,
             sum(toFloat64OrZero(toString(${field}))) AS exposure
-          FROM gcf_risk_mv
+          FROM gcf_risk_mv FINAL
           ${whereStr}
           GROUP BY ${groupBy}
           HAVING exposure != 0
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
         SELECT
           ${groupBy} AS name,
           sum(toFloat64OrZero(toString(${field}))) AS exposure
-        FROM gcf_risk_mv
+        FROM gcf_risk_mv FINAL
         ${whereStr}
         GROUP BY ${groupBy}
         HAVING exposure != 0

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
     if (!hasAsofDate) {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
 
     // Search across multiple text columns
@@ -41,12 +41,12 @@ export async function GET(request: NextRequest) {
     const sortCol = SORTABLE_COLUMNS[sortBy] || F.tradeDt
 
     // Count query
-    const countQuery = `SELECT count() AS total FROM gcf_risk_mv ${whereStr}`
+    const countQuery = `SELECT count() AS total FROM gcf_risk_mv FINAL ${whereStr}`
 
     // Data query
     const dataQuery = `
       SELECT ${TRADE_SELECT_EXPR}
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       ${whereStr}
       ORDER BY ${sortCol} ${sortDir}
       LIMIT {p_limit:UInt32}

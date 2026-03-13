@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       clauses.push(`gcf_risk_mv.${F.asofDate} = {_asof:String}`)
       params["_asof"] = asofDate
     } else {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
 
     // Maturity cutoff: use selected asofDate or today()
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
           toStartOfWeek(${F.maturityDt}) AS month
           ${groupByExpr},
           ${monthlyAggExpr}
-        FROM gcf_risk_mv
+        FROM gcf_risk_mv FINAL
         ${filterWhere}
           AND ${maturityCutoff}
         GROUP BY month${groupByExpr}

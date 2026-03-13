@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
 
     // Scope to latest asofDate so we work with a single snapshot
     if (!hasAsofDate) {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
 
     const whereStr = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
         SELECT
           formatDateTime(${timeField}, '%Y-%m-%d') AS dt,
           ${aggExpr} AS value
-        FROM gcf_risk_mv
+        FROM gcf_risk_mv FINAL
         ${whereStr}
         GROUP BY dt
         ORDER BY dt
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     // Grouped time series: first find top N groups by total absolute value
     const topQuery = `
       SELECT ${groupBy} AS grp, abs(${aggExpr}) AS total
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       ${whereStr}
       GROUP BY ${groupBy}
       ORDER BY total DESC
@@ -121,7 +121,7 @@ export async function GET(request: NextRequest) {
         formatDateTime(${timeField}, '%Y-%m-%d') AS dt,
         ${caseExpr} AS grp,
         ${aggExpr} AS value
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       ${whereStr}
       GROUP BY dt, grp
       ORDER BY dt, grp

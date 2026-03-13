@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     // Always scope to an asofDate — fall back to the latest available
     if (!hasAsofDate) {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
+      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
 
     // Exclude trades with zero cash out
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
     const query = `
       SELECT ${TRADE_SELECT_EXPR}
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       ${whereStr}
       ORDER BY ${sort}
       LIMIT ${limit}

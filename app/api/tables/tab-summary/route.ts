@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
     if (!hasAsofDate) {
-      clauses.push(`${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv)`)
+      clauses.push(`${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
     }
     const whereStr = `WHERE ${clauses.join(" AND ")}`
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         sum(toFloat64OrZero(toString(${m.fundingMargin})) * toFloat64OrZero(toString(${m.fundingAmount})))
           / nullIf(sum(toFloat64OrZero(toString(${m.fundingAmount}))), 0) AS avg_spread,
         avg(toFloat64OrZero(toString(${m.dtm}))) AS avg_dtm
-      FROM gcf_risk_mv
+      FROM gcf_risk_mv FINAL
       ${whereStr}
       GROUP BY ${groupBy}
       ORDER BY funding_amount DESC

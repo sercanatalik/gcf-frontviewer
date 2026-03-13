@@ -82,7 +82,7 @@ export async function GET(
 
     if (asOfDate === "__latest__") {
       const maxResult = await clickhouse.query({
-        query: `SELECT max(${F.asofDate}) as max_date FROM ${table}`,
+        query: `SELECT max(${F.asofDate}) as max_date FROM ${table} FINAL`,
         format: "JSONEachRow",
       })
       const maxRows = await maxResult.json<{ max_date: string }>()
@@ -127,8 +127,8 @@ export async function GET(
       orderSQL = `ORDER BY ${orderBy} ${orderDir}`
     }
 
-    const final = table.endsWith("_mv") ? " FINAL" : ""
-    const query = `SELECT ${selectColumns.join(", ")} FROM ${table}${final} ${whereSQL} ${orderSQL} LIMIT ${limit} OFFSET ${offset}`
+    // FINAL is always applied to all tables
+    const query = `SELECT ${selectColumns.join(", ")} FROM ${table} FINAL ${whereSQL} ${orderSQL} LIMIT ${limit} OFFSET ${offset}`
 
     const [dataResult, countResult] = await Promise.all([
       clickhouse.query({
@@ -137,7 +137,7 @@ export async function GET(
         query_params: queryParams,
       }),
       clickhouse.query({
-        query: `SELECT count() as count FROM ${table}${final} ${whereSQL}`,
+        query: `SELECT count() as count FROM ${table} FINAL ${whereSQL}`,
         format: "JSONEachRow",
         query_params: queryParams,
       }),
