@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
-import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
+import { buildWhereClausesFromFilters, splitAsofDateClauses, buildLatestDateExpr } from "@/lib/filters/serialize"
 import { buildAggExpr, F } from "@/lib/field-defs"
 
 interface KpiMeasure {
@@ -49,22 +49,9 @@ export async function GET(request: NextRequest) {
       ? buildWhereClausesFromFilters(filtersJson)
       : { clauses: [] as string[], params: {} as Record<string, unknown>, hasAsofDate: false }
 
-    // Separate asOfDate clause from other filters so we can use it in the CTE
-    const nonAsofClauses = hasAsofDate
-      ? clauses.filter((c) => !c.includes(F.asofDate))
-      : clauses
-    const asofClause = hasAsofDate
-      ? clauses.find((c) => c.includes(F.asofDate))
-      : null
-
-    const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
+    const { asofClause, filterWhere } = splitAsofDateClauses(clauses, hasAsofDate)
     const aggExprs = measures.map(buildKpiAggExpr).join(", ")
-
-    // If user provided an asOfDate filter, use it to determine the current date;
-    // otherwise default to the max available date.
-    const latestDateExpr = hasAsofDate && asofClause
-      ? `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL WHERE ${asofClause}`
-      : `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL`
+    const latestDateExpr = buildLatestDateExpr(asofClause, hasAsofDate)
 
     const query = `
       WITH

@@ -11,22 +11,13 @@ export const CHART_COLORS = [
 import { sanitizeKey } from "@/lib/utils"
 export { sanitizeKey }
 
-export function formatBps(value: number): string {
-  return `${value.toFixed(1)} bps`
-}
+import { formatBpsRaw, formatCurrencyCompact } from "@/lib/format"
+
+export { formatBpsRaw as formatBps, formatCurrencyCompact as formatCurrency }
 
 export function getTickFormatter(fieldName: string): (value: number) => string {
-  if (fieldName === "weightedSpread") return formatBps
-  return formatCurrency
-}
-
-export function formatCurrency(value: number): string {
-  const sign = value < 0 ? "-" : ""
-  const abs = Math.abs(value)
-  if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(0)}K`
-  return `${sign}$${abs.toFixed(0)}`
+  if (fieldName === "weightedSpread") return formatBpsRaw
+  return formatCurrencyCompact
 }
 
 export function processHistoricalData(

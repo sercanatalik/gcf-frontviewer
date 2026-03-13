@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient } from "@/lib/clickhouse"
 import { buildWhereClausesFromFilters } from "@/lib/filters/serialize"
-import { WEIGHTED_FIELDS, F } from "@/lib/field-defs"
-
-const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
+import { WEIGHTED_FIELDS, F, IDENTIFIER_RE } from "@/lib/field-defs"
 
 /**
  * Extract asofDate from serialised filters so we can handle it specially.

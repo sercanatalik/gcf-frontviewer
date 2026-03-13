@@ -346,6 +346,27 @@ export const DEEP_DIVE_BREAKDOWN_DIMENSIONS = [
 export const DEFAULT_RELATIVE_DAYS = 180
 
 // ---------------------------------------------------------------------------
+// 12b. Shared validation regex for SQL identifier parameters
+// ---------------------------------------------------------------------------
+
+export const IDENTIFIER_RE = /^[a-zA-Z0-9_]+$/
+
+// ---------------------------------------------------------------------------
+// 12c. Allowed groupBy dimensions (activity-comparison, grouped-stats, etc.)
+// ---------------------------------------------------------------------------
+
+export const ALLOWED_GROUP_BY: Set<string> = new Set([
+  F.hms_region,
+  F.hmsSL1,
+  F.hmsSL2,
+  F.hmsBook,
+  F.hmsDesk,
+  F.productType,
+  F.counterpartyParentName,
+  F.cp_type,
+])
+
+// ---------------------------------------------------------------------------
 // 13. Weighted field definitions  (historical / future chart routes)
 // ---------------------------------------------------------------------------
 
