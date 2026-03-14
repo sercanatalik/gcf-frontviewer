@@ -172,7 +172,7 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
         <DropdownMenuLabel>Navigate</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/dashboard">
+            <Link href="/financing">
               <LayoutDashboard className="size-4 text-indigo-500" />
               Dashboard
             </Link>

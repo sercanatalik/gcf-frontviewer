@@ -10,7 +10,7 @@ export function useDeepDiveNavigation(field: string) {
         value,
         label: label ?? value,
       })
-      router.push(`/dashboard/deep-dive?${params}`)
+      router.push(`/financing/deep-dive?${params}`)
     },
     [field, router],
   )

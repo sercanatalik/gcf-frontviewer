@@ -33,15 +33,7 @@ export function createColumns(groupLabel: string): ColumnDef<TabRow>[] {
         <span className="font-medium">{row.getValue("group")}</span>
       ),
     },
-    {
-      accessorKey: "trades",
-      header: "Trades",
-      cell: ({ row }) => (
-        <span className="tabular-nums">
-          {(row.getValue<number>("trades")).toLocaleString()}
-        </span>
-      ),
-    },
+ 
     currencyColumn("cash_out", "Cash Out"),
     currencyColumn("funding_amount", "Funding"),
     currencyColumn("collateral_amount", "Collateral"),
@@ -68,6 +60,15 @@ export function createColumns(groupLabel: string): ColumnDef<TabRow>[] {
           </span>
         )
       },
+    },
+       {
+      accessorKey: "trades",
+      header: "Trades",
+      cell: ({ row }) => (
+        <span className="tabular-nums">
+          {(row.getValue<number>("trades")).toLocaleString()}
+        </span>
+      ),
     },
   ]
 }

@@ -138,13 +138,13 @@ export function ComparisonTable({ data, groupLabel, daysAgo }: ComparisonTablePr
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sorted.map((row) => {
+              {sorted.map((row, index) => {
                 const fundingChange = calcChange(Number(row.currentFunding), Number(row.previousFunding))
                 const isNew = Number(row.previousFunding) === 0 && Number(row.currentFunding) > 0
                 const isGone = Number(row.currentFunding) === 0 && Number(row.previousFunding) > 0
 
                 return (
-                  <TableRow key={row.group} className={isNew ? "bg-emerald-500/5" : isGone ? "bg-red-500/5" : ""}>
+                  <TableRow key={row.group ?? `__blank_${index}`} className={isNew ? "bg-emerald-500/5" : isGone ? "bg-red-500/5" : ""}>
                     <TableCell className="sticky left-0 z-10 bg-card font-medium">
                       <div className="flex items-center gap-2">
                         <span className="max-w-40 truncate">{row.group || "(blank)"}</span>

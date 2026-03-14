@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         prevDate AS (${prevDateCTE}),
         current AS (
           SELECT
-            ${groupBy} AS grp,
+            nullIf(toString(${groupBy}), '') AS grp,
             sum(toFloat64OrZero(toString(${F.fundingAmount})))  AS totalFunding,
             sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS totalCollateral,
             sum(toFloat64OrZero(toString(${F.fundingMargin})) * toFloat64OrZero(toString(${F.fundingAmount})))
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
         ),
         previous AS (
           SELECT
-            ${groupBy} AS grp,
+            nullIf(toString(${groupBy}), '') AS grp,
             sum(toFloat64OrZero(toString(${F.fundingAmount})))  AS totalFunding,
             sum(toFloat64OrZero(toString(${F.collateralAmount}))) AS totalCollateral,
             sum(toFloat64OrZero(toString(${F.fundingMargin})) * toFloat64OrZero(toString(${F.fundingAmount})))
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
           GROUP BY ${groupBy}
         )
       SELECT
-        coalesce(c.grp, p.grp) AS group,
+        coalesce(c.grp, p.grp, '(Unassigned)') AS group,
         coalesce(c.totalFunding, 0) AS currentFunding,
         coalesce(p.totalFunding, 0) AS previousFunding,
         coalesce(c.totalCollateral, 0) AS currentCollateral,
