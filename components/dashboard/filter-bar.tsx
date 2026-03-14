@@ -9,7 +9,7 @@ import {
   iconMapping,
   operatorConfig,
 } from "./filters/filter-config"
-import { filtersActions } from "@/lib/store/filters"
+import { filtersActions, hydrateFiltersFromStorage } from "@/lib/store/filters"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LayoutMenu } from "@/components/workspace/layout-menu"
 
@@ -21,6 +21,7 @@ interface FilterBarProps {
 
 export function FilterBar({ tableName = "gcf_risk_mv", workspaceRef, ready }: FilterBarProps) {
   useEffect(() => {
+    hydrateFiltersFromStorage()
     filtersActions.setActiveTable(tableName)
   }, [tableName])
 

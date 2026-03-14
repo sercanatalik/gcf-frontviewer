@@ -17,26 +17,6 @@ export interface FiltersState {
 
 const STORAGE_KEY = "gcf-filters-state"
 
-function loadPersistedState(): Partial<FiltersState> {
-  if (typeof window === "undefined") return {}
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw)
-    // Strip the asOfDate filter so it gets re-seeded from DB on mount
-    const filters = Array.isArray(parsed.filters)
-      ? parsed.filters.filter((f: Filter) => f.id !== "__asOfDate__")
-      : []
-    return {
-      filters,
-      asOfDate: null,
-      chartGroupBy: parsed.chartGroupBy ?? undefined,
-    }
-  } catch {
-    return {}
-  }
-}
-
 const defaultState: FiltersState = {
   filters: [],
   activeTable: '',
@@ -44,12 +24,33 @@ const defaultState: FiltersState = {
   chartGroupBy: undefined,
 }
 
-const persisted = loadPersistedState()
+// Always start with empty state — hydrate from localStorage after mount
+export const filtersStore = new Store<FiltersState>(defaultState)
 
-export const filtersStore = new Store<FiltersState>({
-  ...defaultState,
-  ...persisted,
-})
+/**
+ * Call once from a client component useEffect to hydrate persisted filters.
+ * Deferred to avoid SSR/client hydration mismatch.
+ */
+export function hydrateFiltersFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw)
+    // Strip the asOfDate filter so it gets re-seeded from DB on mount
+    const filters = Array.isArray(parsed.filters)
+      ? parsed.filters.filter((f: Filter) => f.id !== "__asOfDate__")
+      : []
+    if (filters.length > 0 || parsed.chartGroupBy) {
+      filtersStore.setState((state) => ({
+        ...state,
+        filters: filters.length > 0 ? filters : state.filters,
+        chartGroupBy: parsed.chartGroupBy ?? state.chartGroupBy,
+      }))
+    }
+  } catch {
+    // localStorage unavailable — ignore
+  }
+}
 
 // Persist filter-relevant state on every change
 filtersStore.subscribe(() => {
