@@ -15,11 +15,51 @@ export interface FiltersState {
   chartGroupBy: string | undefined
 }
 
-export const filtersStore = new Store<FiltersState>({
+const STORAGE_KEY = "gcf-filters-state"
+
+function loadPersistedState(): Partial<FiltersState> {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    // Strip the asOfDate filter so it gets re-seeded from DB on mount
+    const filters = Array.isArray(parsed.filters)
+      ? parsed.filters.filter((f: Filter) => f.id !== "__asOfDate__")
+      : []
+    return {
+      filters,
+      asOfDate: null,
+      chartGroupBy: parsed.chartGroupBy ?? undefined,
+    }
+  } catch {
+    return {}
+  }
+}
+
+const defaultState: FiltersState = {
   filters: [],
   activeTable: '',
   asOfDate: null,
   chartGroupBy: undefined,
+}
+
+const persisted = loadPersistedState()
+
+export const filtersStore = new Store<FiltersState>({
+  ...defaultState,
+  ...persisted,
+})
+
+// Persist filter-relevant state on every change
+filtersStore.subscribe(() => {
+  if (typeof window === "undefined") return
+  const { filters, asOfDate, chartGroupBy } = filtersStore.state
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ filters, asOfDate, chartGroupBy }))
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
 })
 
 export const filtersActions = {
