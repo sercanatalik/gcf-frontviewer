@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts"
 import { Loader2 } from "lucide-react"
 import {
@@ -48,20 +49,31 @@ interface RadialChartCardProps {
 }
 
 export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps) {
-  const groups = data ?? []
-  const total = groups.reduce((sum, g) => sum + Math.abs(g.value), 0)
+  const { groups, total, top3, chartData, chartConfig } = useMemo(() => {
+    const gs = (data ?? []).map((g, i) => ({
+      ...g,
+      group: g.group || "Others",
+      absValue: Math.abs(g.value),
+      colorIndex: i,
+    }))
+    const t = gs.reduce((sum, g) => sum + g.absValue, 0)
 
-  // Build single data point with all groups as keys
-  const chartData = [
-    Object.fromEntries(groups.map((g) => [g.group, Math.abs(g.value)])),
-  ]
+    const sorted = [...gs].sort((a, b) => b.absValue - a.absValue).slice(0, 3)
+    const top = sorted.map((g) => ({
+      ...g,
+      pct: t > 0 ? (g.absValue / t) * 100 : 0,
+    }))
 
-  const chartConfig: ChartConfig = Object.fromEntries(
-    groups.map((g, i) => [
-      g.group,
-      { label: g.group, color: COLORS[i % COLORS.length] },
-    ]),
-  )
+    const cd = [Object.fromEntries(gs.map((g) => [g.group, g.absValue]))]
+    const cc: ChartConfig = Object.fromEntries(
+      gs.map((g, i) => [
+        g.group,
+        { label: g.group, color: COLORS[i % COLORS.length] },
+      ]),
+    )
+
+    return { groups: gs, total: t, top3: top, chartData: cd, chartConfig: cc }
+  }, [data])
 
   return (
     <Card className="flex flex-col">
@@ -119,13 +131,13 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
                   }}
                 />
               </PolarRadiusAxis>
-              {groups.map((g, i) => (
+              {groups.map((g) => (
                 <RadialBar
-                  key={g.group}
+                  key={g.colorIndex}
                   dataKey={g.group}
                   stackId="a"
                   cornerRadius={5}
-                  fill={COLORS[i % COLORS.length]}
+                  fill={COLORS[g.colorIndex % COLORS.length]}
                   className="stroke-transparent stroke-2"
                 />
               ))}
@@ -133,17 +145,22 @@ export function RadialChartCard({ chart, data, isLoading }: RadialChartCardProps
           </ChartContainer>
         )}
       </CardContent>
-      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-2 pb-3 text-xs text-muted-foreground">
-        {groups.map((g, i) => (
-          <div key={g.group} className="flex items-center gap-1.5">
-            <span
-              className="size-2 rounded-full"
-              style={{ backgroundColor: COLORS[i % COLORS.length] }}
-            />
-            {g.group}
-          </div>
-        ))}
-      </div>
+      {top3.length > 0 && (
+        <div className="space-y-1 px-3 pb-2 pt-1">
+          {top3.map((g) => (
+            <div key={g.colorIndex} className="flex items-center gap-2 text-xs">
+              <span
+                className="size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: COLORS[g.colorIndex % COLORS.length] }}
+              />
+              <span className="truncate text-muted-foreground">{g.group}</span>
+              <span className="ml-auto font-medium tabular-nums">
+                {g.pct.toFixed(1)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   )
 }
