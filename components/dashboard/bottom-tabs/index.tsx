@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useCallback } from "react"
+import { useMemo, useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { LayoutGrid } from "lucide-react"
 import {
@@ -22,7 +22,8 @@ import type { TabRow } from "./use-bottom-tabs-data"
 
 export function BottomTabs() {
   const router = useRouter()
-  const { data, isLoading } = useBottomTabsData(tabs)
+  const [activeTab, setActiveTab] = useState(tabs[0]!.key)
+  const { data, isLoading } = useBottomTabsData(tabs, activeTab)
 
   const columnsByTab = useMemo(
     () => Object.fromEntries(tabs.map((tab) => [tab.key, createColumns(tab.groupLabel)])),
@@ -35,6 +36,7 @@ export function BottomTabs() {
   )
 
   const handleTabChange = useCallback((key: string) => {
+    setActiveTab(key)
     const tab = tabByKey.get(key)
     if (tab) {
       filtersActions.setChartGroupBy(tab.groupBy)
@@ -67,7 +69,7 @@ export function BottomTabs() {
                     value: row.group,
                     label: row.group,
                   })
-                  router.push(`/dashboard/deep-dive?${params}`)
+                  router.push(`/financing/deep-dive?${params}`)
                 }}
               />
             </TabsContent>

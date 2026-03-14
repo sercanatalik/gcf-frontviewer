@@ -29,7 +29,7 @@ async function fetchTabData(
   return res.json()
 }
 
-export function useBottomTabsData(tabDefs: TabDef[]) {
+export function useBottomTabsData(tabDefs: TabDef[], activeTab?: string) {
   const filtersParam = useFiltersParam()
 
   const results = useQueries({
@@ -38,6 +38,7 @@ export function useBottomTabsData(tabDefs: TabDef[]) {
       queryFn: () => fetchTabData(tab, filtersParam),
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
+      enabled: !activeTab || tab.key === activeTab,
     })),
   })
 

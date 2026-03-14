@@ -398,6 +398,15 @@ export const bottomTabs: TabDef[] = [
   { key: "portfolio", label: "By Portfolio", groupBy: F.hmsBook, groupLabel: "Portfolio", limit: 10 },
   { key: "clients", label: "Top Clients", groupBy: F.counterpartyParentName, groupLabel: "Client", limit: 100 },
   { key: "wwrByCountry", label: "Wrong Way Risk by Country", groupBy: F.i_countryOfRisk, groupLabel: "Country", limit: 10 },
+  { key: "productType", label: "By Product Type", groupBy: F.productType, groupLabel: "Product", limit: 10 },
+  { key: "cpRegion", label: "By CP Region", groupBy: F.cp_region, groupLabel: "CP Region", limit: 10 },
+  { key: "cpType", label: "By CP Type", groupBy: F.cp_type, groupLabel: "CP Type", limit: 10 },
+  { key: "cpRating", label: "By CP Rating (S&P)", groupBy: F.cp_ratingSnp, groupLabel: "Rating", limit: 10 },
+  { key: "fundingCcy", label: "By Funding Currency", groupBy: F.fundingCurrency, groupLabel: "Currency", limit: 10 },
+  { key: "collatType", label: "By Collateral Type", groupBy: F.collateralType, groupLabel: "Collat Type", limit: 10 },
+  { key: "collatIssuer", label: "By Collateral Issuer", groupBy: F.i_issuerName, groupLabel: "Issuer", limit: 20 },
+  { key: "deskRegion", label: "By Desk Region", groupBy: F.hms_region, groupLabel: "Desk Region", limit: 10 },
+  { key: "balanceSheet", label: "By Balance Sheet", groupBy: F.hms_leShortCode, groupLabel: "Entity", limit: 10 },
 ]
 
 // ---------------------------------------------------------------------------
