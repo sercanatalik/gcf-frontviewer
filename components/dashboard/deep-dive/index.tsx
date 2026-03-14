@@ -9,9 +9,16 @@ import {
   TrendingDown,
   Banknote,
   BarChart3,
-  Users,
-  Building2,
+  BookOpen,
+  Briefcase,
+  Coins,
+  Factory,
+  Flag,
   Globe,
+  Layers,
+  Package,
+  Users,
+  UserCheck,
 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -121,19 +128,29 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
 
   // Sub-breakdowns: pick dimensions that aren't the current one
   const breakdownDimensions = React.useMemo(() => {
-    const iconMap: Record<string, typeof Building2> = {
-      hmsDesk: Building2,
-      counterpartyParentName: Users,
-      productType: BarChart3,
+    const iconMap: Record<string, typeof BarChart3> = {
+      // HMS / Book
       hms_region: Globe,
-      collateralType: Banknote,
+      hmsDesk: Briefcase,
+      hmsSL1: Layers,
+      hmsSL2: Layers,
+      hmsBook: BookOpen,
+      // Product
+      productType: Package,
+      fundingType: Coins,
+      // Counterparty
+      counterpartyParentName: UserCheck,
+      cp_type: Users,
+      cp_country: Flag,
+      // Collateral
+      i_issuerName: Factory,
       collatCurrency: Banknote,
     }
     const dims = DEEP_DIVE_BREAKDOWN_DIMENSIONS.map((d) => ({
       ...d,
       icon: iconMap[d.groupBy] ?? BarChart3,
     }))
-    return dims.filter((d) => d.groupBy !== field).slice(0, 4)
+    return dims.filter((d) => d.groupBy !== field)
   }, [field])
 
   const breakdownKey = React.useMemo(() => breakdownDimensions.map((d) => d.groupBy).join(","), [breakdownDimensions])
@@ -141,12 +158,16 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
   const breakdownQueries = useQuery({
     queryKey: ["deep-dive-breakdown", field, value, breakdownKey, filtersParam],
     queryFn: async () => {
-      const results: Record<string, SubBreakdown[]> = {}
-      await Promise.all(
-        breakdownDimensions.map(async (dim) => {
-          results[dim.groupBy] = await fetchSubBreakdown(dim.groupBy, filtersParam)
-        }),
+      const settled = await Promise.allSettled(
+        breakdownDimensions.map(async (dim) => ({
+          key: dim.groupBy,
+          rows: await fetchSubBreakdown(dim.groupBy, filtersParam),
+        })),
       )
+      const results: Record<string, SubBreakdown[]> = {}
+      for (const r of settled) {
+        if (r.status === "fulfilled") results[r.value.key] = r.value.rows
+      }
       return results
     },
     staleTime: 5 * 60 * 1000,
@@ -247,7 +268,7 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
       </div>
 
       {/* Sub-breakdowns */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-5">
         {breakdownDimensions.map((dim) => {
           const rows = breakdownQueries.data?.[dim.groupBy] ?? []
           const Icon = dim.icon

@@ -440,12 +440,22 @@ export const COLLATERAL_MEASURE_FIELD = F.collateralAmount
 // ---------------------------------------------------------------------------
 
 export const DEEP_DIVE_BREAKDOWN_DIMENSIONS = [
-  { groupBy: F.hmsDesk, label: "By Desk" },
-  { groupBy: F.counterpartyParentName, label: "By Client" },
-  { groupBy: F.productType, label: "By Product" },
+  // HMS / Book
   { groupBy: F.hms_region, label: "By Region" },
-  { groupBy: F.collateralType, label: "By Collateral" },
-  { groupBy: F.collatCurrency, label: "By Currency" },
+  { groupBy: F.hmsDesk, label: "By Desk" },
+  { groupBy: F.hmsSL1, label: "By SL1" },
+  { groupBy: F.hmsSL2, label: "By SL2" },
+  
+  { groupBy: F.hmsBook, label: "By Book" },
+  // Product
+  { groupBy: F.productType, label: "By Product" },
+  // Counterparty
+  { groupBy: F.counterpartyParentName, label: "By Client" },
+  { groupBy: F.cp_type, label: "By CP Type" },
+  { groupBy: F.cp_country, label: "By CP Country" },
+  // Collateral
+  { groupBy: F.i_issuerName, label: "By Issuer" },
+  { groupBy: F.collatCurrency, label: "By Collat Ccy" },
 ]
 
 // ---------------------------------------------------------------------------
