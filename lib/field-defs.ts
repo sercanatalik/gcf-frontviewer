@@ -260,23 +260,52 @@ export const NEW_TRADE_SELECT_EXPR = buildSelectExpr(NEW_TRADE_COLUMNS)
 
 export const ALLOWED_FILTER_COLUMNS = new Set<string>([
   F.asOfDate,
-  F.counterParty,
-  F.productType,
-  F.hmsBook,
-  F.collateralDesc,
-  F.collatCurrency,
-  F.i_issuerName,
-  F.i_countryOfRisk,
-  F.collateralType,
-  F.counterpartyParentName,
-  F.cp_type,
-  F.hmsDesk,
-  F.hmsSL1,
-  F.hmsSL2,
-  F.hms_region,
   F.tradeDt,
   F.maturityDt,
   F.tenor,
+
+  // HMS / Book
+  F.hms_region,
+  F.hmsDesk,
+  F.hmsSL1,
+  F.hmsSL2,
+  F.hms_leShortCode,
+  F.hms_tradingLocation,
+  F.hmsBook,
+  F.hms_regulatoryTmt,
+
+  // Product
+  F.productType,
+  F.productSubType,
+
+  // Counterparty
+  F.cp_region,
+  F.cp_country,
+  F.cp_type,
+  F.cp_crr,
+  F.cp_ratingSnp,
+  F.counterpartyName,
+  F.counterpartyParent,
+  F.counterParty,
+
+  // Collateral
+  F.i_region,
+  F.i_country,
+  F.i_issuerName,
+  F.i_industrySector,
+  F.i_instrumentCcy,
+  F.i_rating,
+  F.i_collateralType,
+  F.i_collatQuality,
+  F.i_palmsCode,
+  F.collateralDesc,
+  F.collateralId,
+
+  // Legacy (kept for backward compat)
+  F.counterpartyParentName,
+  F.collatCurrency,
+  F.i_countryOfRisk,
+  F.collateralType,
 ])
 
 // ---------------------------------------------------------------------------

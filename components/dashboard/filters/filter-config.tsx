@@ -1,19 +1,27 @@
 import React from "react"
 import {
-  BarChart3,
+  BookOpen,
+  Briefcase,
   Building,
   Calendar,
-  CreditCard,
+  Coins,
+  Factory,
+  Flag,
   Globe,
+  Hash,
+  Landmark,
   Layers,
-  Network,
+  MapPin,
+  Package,
+  Scale,
   Shield,
+  Star,
   Tag,
   User,
+  UserCheck,
   Users,
 } from "lucide-react"
 import { F } from "@/lib/field-defs"
-import { count } from "node:console"
 
 export const FilterOperators = {
   IS: "is",
@@ -42,41 +50,45 @@ interface FilterFieldDef {
 }
 
 const filterFields: Record<string, FilterFieldDef> = {
-  hmsRegion:               { column: F.hms_region,               icon: <Globe className="size-3.5 text-blue-500" />,            type: "select", operators: selectOperators },
-  hmsDesk:               { column: F.hmsDesk,               icon: <BarChart3 className="size-3.5 text-cyan-500" />,         type: "select", operators: selectOperators },
-  hmsSL1:                { column: F.hmsSL1,                icon: <Globe className="size-3.5 text-violet-500" />,           type: "select", operators: selectOperators },
-  hmsSL2:                { column: F.hmsSL2,                icon: <Globe className="size-3.5 text-fuchsia-500" />,          type: "select", operators: selectOperators },
-  balanceSheet:           { column: F.hms_leShortCode,           icon: <Layers className="size-3.5 text-pink-500" />,            type: "select", operators: selectOperators },
-  tradingLocation:          { column: F.hms_tradingLocation,          icon: <User className="size-3.5 text-orange-500" />,            type: "text",   operators: textOperators },
-  hmsBook:                { column: F.hmsBook,                icon: <Building className="size-3.5 text-yellow-500" />,         type: "select", operators: selectOperators },
-  hmsRegulatatoryStatus:      { column: F.hms_regulatoryTmt,      icon: <Shield className="size-3.5 text-indigo-500" />,          type: "select", operators: selectOperators },
-  productType:           { column: F.productType,           icon: <Tag className="size-3.5 text-green-500" />,              type: "select", operators: selectOperators },
-  productSubType:        { column: F.productSubType,        icon: <Tag className="size-3.5 text-green-700" />,            type: "select", operators: selectOperators },
-  
+  // --- HMS / Book (blue) ---
+  hmsRegion:              { column: F.hms_region,          icon: <Globe className="size-3.5 text-blue-500" />,      type: "select", operators: selectOperators },
+  hmsDesk:                { column: F.hmsDesk,             icon: <Briefcase className="size-3.5 text-blue-500" />,  type: "select", operators: selectOperators },
+  hmsSL1:                 { column: F.hmsSL1,              icon: <Layers className="size-3.5 text-blue-500" />,     type: "select", operators: selectOperators },
+  hmsSL2:                 { column: F.hmsSL2,              icon: <Layers className="size-3.5 text-blue-500" />,     type: "select", operators: selectOperators },
+  balanceSheet:           { column: F.hms_leShortCode,     icon: <Landmark className="size-3.5 text-blue-500" />,   type: "select", operators: selectOperators },
+  tradingLocation:        { column: F.hms_tradingLocation,  icon: <MapPin className="size-3.5 text-blue-500" />,    type: "select", operators: selectOperators },
+  hmsBook:                { column: F.hmsBook,             icon: <BookOpen className="size-3.5 text-blue-500" />,   type: "select", operators: selectOperators },
+  hmsRegulatatoryStatus:  { column: F.hms_regulatoryTmt,   icon: <Scale className="size-3.5 text-blue-500" />,     type: "select", operators: selectOperators },
 
-  counterpartyRegion:       { column: F.cp_region,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
-  counterpartyCountry:      { column: F.cp_country,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
-  counterpartyType:       { column: F.cp_type,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
-  counterpartyCRR:       { column: F.cp_crr,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
-  counterpartyRating:       { column: F.cp_ratingSnp,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
+  // --- Product (green) ---
+  productType:            { column: F.productType,         icon: <Package className="size-3.5 text-green-500" />,   type: "select", operators: selectOperators },
+  productSubType:         { column: F.productSubType,      icon: <Tag className="size-3.5 text-green-500" />,       type: "select", operators: selectOperators },
 
-  counterpartyName:       { column: F.counterpartyName,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
-  counterpartyParent:       { column: F.counterpartyParent,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
-  counterpartyLTreats:       { column: F.counterParty,       icon: <Users className="size-3.5 text-blue-700" />,          type: "text",   operators: textOperators },
+  // --- Counterparty (violet) ---
+  counterpartyRegion:     { column: F.cp_region,           icon: <Globe className="size-3.5 text-violet-500" />,    type: "select", operators: selectOperators },
+  counterpartyCountry:    { column: F.cp_country,          icon: <Flag className="size-3.5 text-violet-500" />,     type: "select", operators: selectOperators },
+  counterpartyType:       { column: F.cp_type,             icon: <Users className="size-3.5 text-violet-500" />,    type: "select", operators: selectOperators },
+  counterpartyCRR:        { column: F.cp_crr,              icon: <Shield className="size-3.5 text-violet-500" />,   type: "select", operators: selectOperators },
+  counterpartyRating:     { column: F.cp_ratingSnp,        icon: <Star className="size-3.5 text-violet-500" />,     type: "select", operators: selectOperators },
+  counterpartyName:       { column: F.counterpartyName,    icon: <User className="size-3.5 text-violet-500" />,     type: "select", operators: selectOperators },
+  counterpartyParent:     { column: F.counterpartyParent,  icon: <UserCheck className="size-3.5 text-violet-500" />, type: "select", operators: selectOperators },
+  counterpartyLTreats:    { column: F.counterParty,        icon: <Building className="size-3.5 text-violet-500" />, type: "select", operators: selectOperators },
 
-  collateralRegion:       { column: F.i_region,       icon: <Shield className="size-3.5 text-indigo-700" />,          type: "text",   operators: textOperators },
-  collateralCounty:       { column: F.i_country,       icon: <Shield className="size-3.5 text-indigo-700" />,          type: "text",   operators: textOperators },
-  collateralIssuer:       { column: F.i_issuerName,       icon: <CreditCard className="size-3.5 text-yellow-500" />,          type: "text",   operators: textOperators },
-  collateralSector:       { column: F.i_industrySector,       icon: <Network className="size-3.5 text-red-500" />,          type: "text",   operators: textOperators },
-  collateralCcy:          { column: F.i_instrumentCcy,       icon: <CreditCard className="size-3.5 text-yellow-700" />,          type: "text",   operators: textOperators },
-  collateralRating:       { column: F.i_rating,       icon: <Shield className="size-3.5 text-indigo-500" />,          type: "text",   operators: textOperators },
-  collateralType:         { column: F.i_collateralType,       icon: <CreditCard className="size-3.5 text-yellow-700" />,          type: "text",   operators: textOperators },
-  collateralQuality:      { column: F.i_collatQuality,       icon: <CreditCard className="size-3.5 text-yellow-700" />,          type: "text",   operators: textOperators },
-  collateralPalmCode:       { column: F.i_palmsCode,       icon: <CreditCard className="size-3.5 text-yellow-700" />,          type: "text",   operators: textOperators },
-  collateralName:       { column: F.collateralDesc,       icon: <CreditCard className="size-3.5 text-yellow-700" />,          type: "text",   operators: textOperators },
-  colleteralIsin:       { column: F.collateralId,       icon: <CreditCard className="size-3.5 text-yellow-700" />,          type: "text",   operators: textOperators },
-  
-  asOfDate:              { column: F.asOfDate,              icon: <Calendar className="size-3.5 text-muted-foreground" />,   type: "select",   operators: [FilterOperators.IS], singleSelect: true, sortDesc: true, pinned: true },
+  // --- Collateral (amber) ---
+  collateralRegion:       { column: F.i_region,            icon: <Globe className="size-3.5 text-amber-500" />,     type: "select", operators: selectOperators },
+  collateralCounty:       { column: F.i_country,           icon: <Flag className="size-3.5 text-amber-500" />,      type: "select", operators: selectOperators },
+  collateralIssuer:       { column: F.i_issuerName,        icon: <Factory className="size-3.5 text-amber-500" />,   type: "select", operators: selectOperators },
+  collateralSector:       { column: F.i_industrySector,    icon: <Briefcase className="size-3.5 text-amber-500" />, type: "select", operators: selectOperators },
+  collateralCcy:          { column: F.i_instrumentCcy,     icon: <Coins className="size-3.5 text-amber-500" />,     type: "select", operators: selectOperators },
+  collateralRating:       { column: F.i_rating,            icon: <Star className="size-3.5 text-amber-500" />,      type: "select", operators: selectOperators },
+  collateralType:         { column: F.i_collateralType,    icon: <Tag className="size-3.5 text-amber-500" />,       type: "select", operators: selectOperators },
+  collateralQuality:      { column: F.i_collatQuality,     icon: <Shield className="size-3.5 text-amber-500" />,    type: "select", operators: selectOperators },
+  collateralPalmCode:     { column: F.i_palmsCode,         icon: <Hash className="size-3.5 text-amber-500" />,      type: "select", operators: selectOperators },
+  collateralName:         { column: F.collateralDesc,      icon: <Landmark className="size-3.5 text-amber-500" />,  type: "select", operators: selectOperators },
+  colleteralIsin:         { column: F.collateralId,        icon: <Hash className="size-3.5 text-amber-500" />,      type: "select", operators: selectOperators },
+
+  // --- Date ---
+  asOfDate:               { column: F.asOfDate,            icon: <Calendar className="size-3.5 text-muted-foreground" />, type: "select", operators: [FilterOperators.IS], singleSelect: true, sortDesc: true, pinned: true },
 }
 
 // Derived maps consumed by RiskFilter
