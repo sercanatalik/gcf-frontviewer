@@ -31,7 +31,10 @@ export const filtersStore = new Store<FiltersState>(defaultState)
  * Call once from a client component useEffect to hydrate persisted filters.
  * Deferred to avoid SSR/client hydration mismatch.
  */
+let _hydrated = false
 export function hydrateFiltersFromStorage() {
+  if (_hydrated) return
+  _hydrated = true
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return
