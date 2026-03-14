@@ -5,6 +5,7 @@ import {
   Building,
   Calendar,
   Coins,
+  Computer,
   Factory,
   Flag,
   Globe,
@@ -60,10 +61,15 @@ const filterFields: Record<string, FilterFieldDef> = {
   tradingLocation:        { column: F.hms_tradingLocation, label: "Trading Location",  icon: <MapPin className="size-3.5 text-blue-500" />,     type: "select", operators: selectOperators },
   hmsBook:                { column: F.hmsBook,             label: "Book",              icon: <BookOpen className="size-3.5 text-blue-500" />,   type: "select", operators: selectOperators },
   hmsRegulatatoryStatus:  { column: F.hms_regulatoryTmt,   label: "Regulatory Status", icon: <Scale className="size-3.5 text-blue-500" />,     type: "select", operators: selectOperators },
+  hmsSystem:            { column: F.hms_system,          label: "System/PTS",            icon: <Computer className="size-3.5 text-blue-500" />,      type: "select", operators: selectOperators },
+  hmsPortfolio:           { column: F.hmsPortfolio,       label: "Portfolio",             icon: <Briefcase className="size-3.5 text-blue-500" />,     type: "select", operators: selectOperators },
+  hmsPrimaryTrader:     { column: F.hms_primaryTrader,   label: "Primary Trader",        icon: <User className="size-3.5 text-blue-500" />,         type: "select", operators: selectOperators },
+
 
   // --- Product (green) ---
   productType:            { column: F.productType,         label: "Type",              icon: <Package className="size-3.5 text-green-500" />,   type: "select", operators: selectOperators },
   productSubType:         { column: F.productSubType,      label: "Sub Type",          icon: <Tag className="size-3.5 text-green-500" />,       type: "select", operators: selectOperators },
+  productFundingType:      { column: F.fundingType, label: "Funding Type",      icon: <Coins className="size-3.5 text-green-500" />,     type: "select", operators: selectOperators },
 
   // --- Counterparty (violet) ---
   counterpartyRegion:     { column: F.cp_region,           label: "Region",            icon: <Globe className="size-3.5 text-violet-500" />,    type: "select", operators: selectOperators },
@@ -108,13 +114,13 @@ export const filterGroups: FilterGroupDef[] = [
     key: "hms",
     label: "HMS / Book",
     color: "blue",
-    fields: ["hmsRegion", "hmsDesk", "hmsSL1", "hmsSL2", "balanceSheet", "tradingLocation", "hmsBook", "hmsRegulatatoryStatus"],
+    fields: ["hmsRegion", "hmsDesk", "hmsSL1", "hmsSL2", "balanceSheet", "tradingLocation", "hmsBook", "hmsRegulatatoryStatus", "hmsSystem", "hmsPortfolio", "hmsPrimaryTrader"],
   },
   {
     key: "product",
     label: "Product",
     color: "green",
-    fields: ["productType", "productSubType"],
+    fields: ["productType", "productSubType", "productFundingType"],
   },
   {
     key: "counterparty",
