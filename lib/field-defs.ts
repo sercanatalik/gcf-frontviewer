@@ -267,27 +267,27 @@ export const KNOWN_COLUMNS = new Set<string>(Object.values(F))
 import type { KpiMeasure } from "@/components/dashboard/kpi-cards/types"
 
 export const kpiMeasures: KpiMeasure[] = [
-  { key: "cashOut",          label: "Cash Out",           field: F.cashOut,          aggregation: "sum",    formatter: "currency" },
-  { key: "fundingAmount",    label: "Funding Amount",     field: F.fundingAmount,    aggregation: "sum",    formatter: "currency" },
-  { key: "collateralAmount", label: "Collateral Amount",  field: F.collateralAmount, aggregation: "sum",    formatter: "currency" },
-  { key: "avgSpread",        label: "Average Spread",     field: F.fundingMargin,    aggregation: "avgBy",  weightField: F.fundingAmount, formatter: "bps" },
+  { key: "cashOut", label: "Cash Out", field: F.cashOut, aggregation: "sum", formatter: "currency" },
+  { key: "fundingAmount", label: "Funding Amount", field: F.fundingAmount, aggregation: "sum", formatter: "currency" },
+  { key: "collateralAmount", label: "Collateral Amount", field: F.collateralAmount, aggregation: "sum", formatter: "currency" },
+  { key: "avgSpread", label: "Average Spread", field: F.fundingMargin, aggregation: "avgBy", weightField: F.fundingAmount, formatter: "bps" },
 ]
 
 export const secondaryKpiMeasures: KpiMeasure[] = [
-  { key: "avgMaturity",      label: "Avg Maturity",       field: F.dtm,              aggregation: "avgBy",  weightField: F.fundingAmount, formatter: "days" },
-  { key: "dailyAccrual",     label: "Daily Accrual",      field: F.accrualDaily,     aggregation: "sum",    formatter: "currency" },
-  { key: "projectedAccrual", label: "Projected Accrual",  field: F.accrualProjected, aggregation: "sum",    formatter: "currency" },
-  { key: "realisedAccrual",  label: "Realized Accrual",   field: F.accrualRealised,  aggregation: "sum",    formatter: "currency" },
+  { key: "avgMaturity", label: "Avg Maturity", field: F.dtm, aggregation: "avgBy", weightField: F.fundingAmount, formatter: "days" },
+  { key: "dailyAccrual", label: "Daily Accrual", field: F.accrualDaily, aggregation: "sum", formatter: "currency" },
+  { key: "projectedAccrual", label: "Projected Accrual", field: F.accrualProjected, aggregation: "sum", formatter: "currency" },
+  { key: "realisedAccrual", label: "Realized Accrual", field: F.accrualRealised, aggregation: "sum", formatter: "currency" },
 ]
 
 export const deepDiveMeasures: KpiMeasure[] = [
-  { key: "cashOut",          label: "Cash Out",           field: F.cashOut,          aggregation: "sum",           formatter: "currency" },
-  { key: "fundingAmount",    label: "Funding Amount",     field: F.fundingAmount,    aggregation: "sum",           formatter: "currency" },
-  { key: "collateralAmount", label: "Collateral",         field: F.collateralAmount, aggregation: "sum",           formatter: "currency" },
-  { key: "avgSpread",        label: "Avg Spread",         field: F.fundingMargin,    aggregation: "avgBy",         weightField: F.fundingAmount, formatter: "bps" },
-  { key: "avgMaturity",      label: "Avg Maturity",       field: F.dtm,              aggregation: "avgBy",         weightField: F.fundingAmount, formatter: "days" },
-  { key: "tradeCount",       label: "Trades",             field: F.tradeId,          aggregation: "countDistinct", formatter: "count" },
-  { key: "cpCount",          label: "Counterparties",     field: F.counterParty,     aggregation: "countDistinct", formatter: "count" },
+  { key: "cashOut", label: "Cash Out", field: F.cashOut, aggregation: "sum", formatter: "currency" },
+  { key: "fundingAmount", label: "Funding Amount", field: F.fundingAmount, aggregation: "sum", formatter: "currency" },
+  { key: "collateralAmount", label: "Collateral", field: F.collateralAmount, aggregation: "sum", formatter: "currency" },
+  { key: "avgSpread", label: "Avg Spread", field: F.fundingMargin, aggregation: "avgBy", weightField: F.fundingAmount, formatter: "bps" },
+  { key: "avgMaturity", label: "Avg Maturity", field: F.dtm, aggregation: "avgBy", weightField: F.fundingAmount, formatter: "days" },
+  { key: "tradeCount", label: "Trades", field: F.tradeId, aggregation: "countDistinct", formatter: "count" },
+  { key: "cpCount", label: "Counterparties", field: F.counterParty, aggregation: "countDistinct", formatter: "count" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -297,13 +297,13 @@ export const deepDiveMeasures: KpiMeasure[] = [
 import type { StatMeasure } from "@/components/dashboard/stats-row/types"
 
 export const statMeasures: StatMeasure[] = [
-  { key: "trades",        label: "Trades",          field: F.tradeId,           aggregation: "count",         icon: "Copy",      color: "oklch(0.62 0.17 255)" },
-  { key: "clients",       label: "Clients",         field: F.counterParty,      aggregation: "countDistinct", icon: "Users",     color: "oklch(0.55 0.20 260)" },
-  { key: "assets",        label: "Assets",          field: F.collateralDesc,    aggregation: "countDistinct", icon: "Briefcase", color: "oklch(0.60 0.16 170)" },
-  { key: "collateralCcy", label: "Collateral Ccy",  field: F.collatCurrency,    aggregation: "countDistinct", icon: "Coins",     color: "oklch(0.65 0.15 50)" },
-  { key: "fundingCcy",    label: "Funding Ccy",     field: F.fundingCurrency,   aggregation: "countDistinct", icon: "DollarSign", color: "oklch(0.58 0.18 300)" },
-  { key: "books",         label: "Books",           field: F.hmsBook,           aggregation: "countDistinct", icon: "BookOpen",  color: "oklch(0.55 0.15 230)" },
-  { key: "traders",       label: "Traders",         field: F.hms_primaryTrader, aggregation: "countDistinct", icon: "UserCheck", color: "oklch(0.60 0.14 200)" },
+  { key: "trades", label: "Trades", field: F.tradeId, aggregation: "count", icon: "Copy", color: "oklch(0.62 0.17 255)" },
+  { key: "clients", label: "Clients", field: F.counterParty, aggregation: "countDistinct", icon: "Users", color: "oklch(0.55 0.20 260)" },
+  { key: "assets", label: "Assets", field: F.collateralDesc, aggregation: "countDistinct", icon: "Briefcase", color: "oklch(0.60 0.16 170)" },
+  { key: "collateralCcy", label: "Collateral Ccy", field: F.collatCurrency, aggregation: "countDistinct", icon: "Coins", color: "oklch(0.65 0.15 50)" },
+  { key: "fundingCcy", label: "Funding Ccy", field: F.fundingCurrency, aggregation: "countDistinct", icon: "DollarSign", color: "oklch(0.58 0.18 300)" },
+  { key: "books", label: "Books", field: F.hmsBook, aggregation: "countDistinct", icon: "BookOpen", color: "oklch(0.55 0.15 230)" },
+  { key: "traders", label: "Traders", field: F.hms_primaryTrader, aggregation: "countDistinct", icon: "UserCheck", color: "oklch(0.60 0.14 200)" },
 ]
 
 // ---------------------------------------------------------------------------
@@ -311,10 +311,10 @@ export const statMeasures: StatMeasure[] = [
 // ---------------------------------------------------------------------------
 
 export const CHART_FIELD_OPTIONS = [
-  { value: F.cashOut,          label: "Cash Out" },
-  { value: F.fundingAmount,    label: "Funding Amount" },
+  { value: F.cashOut, label: "Cash Out" },
+  { value: F.fundingAmount, label: "Funding Amount" },
   { value: F.collateralAmount, label: "Collateral Amount" },
-  { value: "weightedSpread",   label: "Avg Spread (bps)" },
+  { value: "weightedSpread", label: "Avg Spread (bps)" },
 ] as const
 
 // ---------------------------------------------------------------------------
@@ -334,7 +334,7 @@ export const radialCharts: RadialChartDef[] = [
     centerLabel: "CashOut",
     formatter: "currency",
   },
-    {
+  {
     key: "fundingByhmsSL1",
     title: "by Desk",
     description: "Cash out by activity",
@@ -384,7 +384,7 @@ export const radialCharts: RadialChartDef[] = [
     centerLabel: "Total",
     formatter: "currency",
   },
-   
+
 ]
 
 // ---------------------------------------------------------------------------
@@ -394,10 +394,10 @@ export const radialCharts: RadialChartDef[] = [
 import type { TabDef } from "@/components/dashboard/bottom-tabs/data"
 
 export const bottomTabs: TabDef[] = [
-  { key: "location",     label: "By Trading Desk",             groupBy: F.hmsSL1,                 groupLabel: "Location",  limit: 10 },
-  { key: "portfolio",    label: "By Portfolio",                 groupBy: F.hmsBook,                groupLabel: "Portfolio", limit: 10 },
-  { key: "clients",      label: "Top Clients",                  groupBy: F.counterpartyParentName, groupLabel: "Client",   limit: 100 },
-  { key: "wwrByCountry", label: "Wrong Way Risk by Country",    groupBy: F.i_countryOfRisk,        groupLabel: "Country",  limit: 10 },
+  { key: "location", label: "By Trading Desk", groupBy: F.hmsSL1, groupLabel: "Location", limit: 10 },
+  { key: "portfolio", label: "By Portfolio", groupBy: F.hmsBook, groupLabel: "Portfolio", limit: 10 },
+  { key: "clients", label: "Top Clients", groupBy: F.counterpartyParentName, groupLabel: "Client", limit: 100 },
+  { key: "wwrByCountry", label: "Wrong Way Risk by Country", groupBy: F.i_countryOfRisk, groupLabel: "Country", limit: 10 },
 ]
 
 // ---------------------------------------------------------------------------
@@ -407,10 +407,12 @@ export const bottomTabs: TabDef[] = [
 export type CounterpartyDimension = string
 
 export const COUNTERPARTY_DIMENSION_OPTIONS: { value: CounterpartyDimension; label: string }[] = [
-  { value: "counterpartyParentName", label: "Name" },
-  { value: "hms_region", label: "Region" },
-  { value: "i_countryOfRisk", label: "Country" },
+  { value: "counterpartyParent", label: "Name" },
   { value: "cp_type", label: "Type" },
+  { value: "cp_country", label: "Country" },
+  { value: "cp_region", label: "Region" },
+  { value: "cp_crr", label: "CRR" },
+
 ]
 
 export const COUNTERPARTY_MEASURE_FIELD = F.fundingAmount
@@ -418,11 +420,18 @@ export const COUNTERPARTY_MEASURE_FIELD = F.fundingAmount
 export type CollateralDimension = string
 
 export const COLLATERAL_DIMENSION_OPTIONS: { value: CollateralDimension; label: string }[] = [
-  { value: "collateralDesc", label: "Security" },
+
   { value: "i_issuerName", label: "Issuer" },
+  { value: "collateralDesc", label: "Security" },
   { value: "collatCurrency", label: "Currency" },
-  { value: "collateralType", label: "Type" },
+  { value: "i_type", label: "Type" },
+  { value: "i_region", label: "Region" },
+  { value: "i_country", label: "Country" },
+
 ]
+
+
+
 
 export const COLLATERAL_MEASURE_FIELD = F.collateralAmount
 
@@ -431,12 +440,12 @@ export const COLLATERAL_MEASURE_FIELD = F.collateralAmount
 // ---------------------------------------------------------------------------
 
 export const DEEP_DIVE_BREAKDOWN_DIMENSIONS = [
-  { groupBy: F.hmsDesk,               label: "By Desk" },
+  { groupBy: F.hmsDesk, label: "By Desk" },
   { groupBy: F.counterpartyParentName, label: "By Client" },
-  { groupBy: F.productType,            label: "By Product" },
-  { groupBy: F.hms_region,             label: "By Region" },
-  { groupBy: F.collateralType,         label: "By Collateral" },
-  { groupBy: F.collatCurrency,         label: "By Currency" },
+  { groupBy: F.productType, label: "By Product" },
+  { groupBy: F.hms_region, label: "By Region" },
+  { groupBy: F.collateralType, label: "By Collateral" },
+  { groupBy: F.collatCurrency, label: "By Currency" },
 ]
 
 // ---------------------------------------------------------------------------
