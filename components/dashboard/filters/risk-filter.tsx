@@ -216,7 +216,7 @@ export function RiskFilter({
             {!filters.length && "Filter"}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
+        <PopoverContent className="w-[220px] p-0">
           <AnimateChangeInHeight>
             <Command>
               <CommandInput
@@ -226,7 +226,7 @@ export function RiskFilter({
                 onInputCapture={(e) => setCommandInput(e.currentTarget.value)}
                 ref={commandInputRef}
               />
-              <CommandList className="max-h-[500px]">
+              <CommandList className="max-h-[900px]">
                 <CommandEmpty>No results found.</CommandEmpty>
                 {selectedView ? (
                   <CommandGroup key={selectedView}>
