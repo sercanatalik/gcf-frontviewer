@@ -295,7 +295,7 @@ export function TradeDetailDialog({ trade, open, onOpenChange }: TradeDetailDial
 
               {/* Timeline dates */}
               <div className="mt-4 grid grid-cols-4 gap-3">
-                <DateCard label="As of Date" date={trade.asofDate} />
+                <DateCard label="As of Date" date={trade.asOfDate} />
                 <DateCard label="Trade Date" date={trade.tradeDt} />
                 <DateCard label="Start Date" date={trade.startDt} />
                 <DateCard label="Maturity Date" date={trade.maturityDt} urgent={isUrgent} />

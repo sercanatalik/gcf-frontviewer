@@ -44,12 +44,12 @@ export async function GET() {
         const countRows = await countResult.json<{ count: string }>()
         const rowCount = Number(countRows[0]?.count ?? 0)
 
-        const hasAsOfDate = columns.some((col) => col.name === F.asofDate)
+        const hasAsOfDate = columns.some((col) => col.name === F.asOfDate)
 
         let latestAsOfDate: string | undefined
         if (hasAsOfDate) {
           const maxResult = await clickhouse.query({
-            query: `SELECT max(${F.asofDate}) as max_date FROM ${name} FINAL`,
+            query: `SELECT max(${F.asOfDate}) as max_date FROM ${name} FINAL`,
             format: "JSONEachRow",
           })
           const maxRows = await maxResult.json<{ max_date: string }>()

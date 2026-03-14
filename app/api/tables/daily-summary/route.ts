@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       MAX_LIMIT,
     )
     const offset = Number(searchParams.get("offset") ?? 0)
-    const asOfDate = searchParams.get("asofDate")
+    const asOfDate = searchParams.get("asOfDate")
 
     const whereClauses: string[] = []
     const queryParams: Record<string, unknown> = {}
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (asOfDate && asOfDate !== "__latest__") {
-      whereClauses.push(`${F.asofDate} <= {_asof:String}`)
+      whereClauses.push(`${F.asOfDate} <= {_asof:String}`)
       queryParams["_asof"] = asOfDate
     }
 
@@ -42,21 +42,21 @@ export async function GET(request: NextRequest) {
 
     const query = `
       SELECT
-        ${F.asofDate},
+        ${F.asOfDate},
         ${summarySelect}
       FROM gcf_risk_mv FINAL
       ${whereStr}
-      GROUP BY ${F.asofDate}
-      ORDER BY ${F.asofDate}
+      GROUP BY ${F.asOfDate}
+      ORDER BY ${F.asOfDate}
       LIMIT ${limit} OFFSET ${offset}
     `
 
     const countQuery = `
       SELECT count() AS count FROM (
-        SELECT ${F.asofDate}
+        SELECT ${F.asOfDate}
         FROM gcf_risk_mv FINAL
         ${whereStr}
-        GROUP BY ${F.asofDate}
+        GROUP BY ${F.asOfDate}
       )
     `
 

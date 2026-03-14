@@ -163,7 +163,7 @@ types/perspective.d.ts     # Perspective type declarations
 - Actions: `setFilters`, `addFilter`, `removeFilter`, `updateFilter`, `clearFilters`, `setActiveTable`, `setAsOfDate`
 
 ### Filter Fields (`components/dashboard/filters/filter-config.tsx`)
-- 15 filterable columns: hmsDesk, hmsSL1, hmsSL2, tradeDt, maturityDt, tenor, counterParty, productType, hmsBook, collateralDesc, collatCurrency, issuerName, counterpartyParentName, cpType, asofDate
+- 15 filterable columns: hmsDesk, hmsSL1, hmsSL2, tradeDt, maturityDt, tenor, counterParty, productType, hmsBook, collateralDesc, collatCurrency, issuerName, counterpartyParentName, cpType, asOfDate
 - 3 operator types: select (single/multi), text (ILIKE), date (comparisons)
 - Operators: IS, IS NOT, IS ANY OF, INCLUDE, DO NOT INCLUDE, BEFORE, AFTER, BEFORE & EQUAL, AFTER & EQUAL
 

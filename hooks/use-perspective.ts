@@ -221,7 +221,7 @@ export function usePerspective(
         {
           const DAILY_SUMMARY_TABLE = "gcf_daily_summary"
           const dailySummarySchema: Record<string, string> = {
-            asofDate: "datetime",
+            asOfDate: "datetime",
             cashOut: "float",
             fundingAmount: "float",
             collateralAmount: "float",
@@ -530,7 +530,7 @@ export function usePerspective(
         filters: filtersParam || undefined,
       })
       const dsColTypes = new Map<string, string>([
-        ["asofDate", "datetime"],
+        ["asOfDate", "datetime"],
         ["cashOut", "float"],
         ["fundingAmount", "float"],
         ["collateralAmount", "float"],

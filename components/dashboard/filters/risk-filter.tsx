@@ -72,13 +72,13 @@ function useFilterOptions(
   }, [entries, queries, iconMapping, operatorConfig])
 }
 
-const ASOF_FILTER_ID = "__asofDate__"
+const ASOF_FILTER_ID = "__asOfDate__"
 
 function useDefaultAsofDate(tableName: string) {
   const { data: latestDate } = useQuery({
-    queryKey: ["latest-asofDate", tableName],
+    queryKey: ["latest-asOfDate", tableName],
     queryFn: async () => {
-      const res = await fetch(`${basePath}/api/tables/distinct?table=${tableName}&column=asofDate`)
+      const res = await fetch(`${basePath}/api/tables/distinct?table=${tableName}&column=asOfDate`)
       if (!res.ok) return null
       const values: string[] = await res.json()
       return values.length > 0 ? values[values.length - 1]! : null
@@ -94,10 +94,10 @@ function useDefaultAsofDate(tableName: string) {
     if (!existing) {
       filtersActions.addFilter({
         id: ASOF_FILTER_ID,
-        type: "asofDate",
+        type: "asOfDate",
         operator: "is",
         value: [latestDate],
-        field: "asofDate",
+        field: "asOfDate",
       })
     }
     seeded.current = true

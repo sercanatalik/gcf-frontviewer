@@ -9,7 +9,7 @@ import { filterTypes } from "@/components/dashboard/filters/filter-config"
 const GROUP_BY_OPTIONS = [
   { value: "", label: "None" },
   ...Object.entries(filterTypes)
-    .filter(([, col]) => !["tradeDt", "maturityDt", "asofDate"].includes(col))
+    .filter(([, col]) => !["tradeDt", "maturityDt", "asOfDate"].includes(col))
     .map(([key, col]) => ({ value: col, label: key })),
 ]
 

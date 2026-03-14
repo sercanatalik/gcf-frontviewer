@@ -87,7 +87,7 @@ export function buildWhereClausesFromFilters(filtersJson: string): {
 
     const sqlOp = filterOperators[f.operator]
     if (!sqlOp) return
-    if (col === F.asofDate) hasAsofDate = true
+    if (col === F.asOfDate) hasAsofDate = true
     const isDate = DATE_COLUMNS.has(col)
     const paramKey = `p${idx}`
 
@@ -136,8 +136,8 @@ export function buildWhereClausesFromFilters(filtersJson: string): {
 }
 
 /**
- * Split asofDate clauses from the rest of the filter clauses.
- * Many API routes need to handle asofDate separately (e.g. for CTE subqueries
+ * Split asOfDate clauses from the rest of the filter clauses.
+ * Many API routes need to handle asOfDate separately (e.g. for CTE subqueries
  * that determine the latest/previous snapshot date).
  */
 export function splitAsofDateClauses(clauses: string[], hasAsofDate: boolean): {
@@ -146,10 +146,10 @@ export function splitAsofDateClauses(clauses: string[], hasAsofDate: boolean): {
   filterWhere: string
 } {
   const nonAsofClauses = hasAsofDate
-    ? clauses.filter((c) => !c.includes(F.asofDate))
+    ? clauses.filter((c) => !c.includes(F.asOfDate))
     : clauses
   const asofClause = hasAsofDate
-    ? clauses.find((c) => c.includes(F.asofDate)) ?? null
+    ? clauses.find((c) => c.includes(F.asOfDate)) ?? null
     : null
   const filterWhere = nonAsofClauses.length > 0 ? ` AND ${nonAsofClauses.join(" AND ")}` : ""
   return { nonAsofClauses, asofClause, filterWhere }
@@ -160,6 +160,6 @@ export function splitAsofDateClauses(clauses: string[], hasAsofDate: boolean): {
  */
 export function buildLatestDateExpr(asofClause: string | null, hasAsofDate: boolean): string {
   return hasAsofDate && asofClause
-    ? `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL WHERE ${asofClause}`
-    : `SELECT max(${F.asofDate}) AS d FROM gcf_risk_mv FINAL`
+    ? `SELECT max(${F.asOfDate}) AS d FROM gcf_risk_mv FINAL WHERE ${asofClause}`
+    : `SELECT max(${F.asOfDate}) AS d FROM gcf_risk_mv FINAL`
 }

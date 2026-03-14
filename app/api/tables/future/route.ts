@@ -19,20 +19,20 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-    const { cleaned, asofDate } = extractAsofDate(filtersJson)
+    const { cleaned, asOfDate } = extractAsofDate(filtersJson)
 
     const { clauses, params } = cleaned
       ? buildWhereClausesFromFilters(cleaned)
       : { clauses: [] as string[], params: {} as Record<string, unknown> }
 
-    if (asofDate) {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = {_asof:String}`)
-      params["_asof"] = asofDate
+    if (asOfDate) {
+      clauses.push(`gcf_risk_mv.${F.asOfDate} = {_asof:String}`)
+      params["_asof"] = asOfDate
     } else {
-      clauses.push(`gcf_risk_mv.${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
+      clauses.push(`gcf_risk_mv.${F.asOfDate} = (SELECT max(${F.asOfDate}) FROM gcf_risk_mv FINAL)`)
     }
 
-    const maturityCutoff = asofDate
+    const maturityCutoff = asOfDate
       ? `${F.maturityDt} >= {_asof:String}`
       : `${F.maturityDt} >= today()`
 

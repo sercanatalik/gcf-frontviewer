@@ -50,7 +50,7 @@ export async function GET(
     const orderDir =
       searchParams.get("order_dir")?.toUpperCase() === "DESC" ? "DESC" : "ASC"
     const columns = searchParams.get("columns")
-    const asOfDate = searchParams.get("asofDate")
+    const asOfDate = searchParams.get("asOfDate")
 
     const selectColumns = columns
       ? columns
@@ -82,19 +82,19 @@ export async function GET(
 
     if (asOfDate === "__latest__") {
       const maxResult = await clickhouse.query({
-        query: `SELECT max(${F.asofDate}) as max_date FROM ${table} FINAL`,
+        query: `SELECT max(${F.asOfDate}) as max_date FROM ${table} FINAL`,
         format: "JSONEachRow",
       })
       const maxRows = await maxResult.json<{ max_date: string }>()
       const maxDate = maxRows[0]?.max_date
       if (maxDate) {
         const pName = `p${paramIndex++}`
-        whereClauses.push(`${F.asofDate} = {${pName}:String}`)
+        whereClauses.push(`${F.asOfDate} = {${pName}:String}`)
         queryParams[pName] = maxDate
       }
     } else if (asOfDate) {
       const pName = `p${paramIndex++}`
-      whereClauses.push(`${F.asofDate} = {${pName}:String}`)
+      whereClauses.push(`${F.asOfDate} = {${pName}:String}`)
       queryParams[pName] = asOfDate
     }
 

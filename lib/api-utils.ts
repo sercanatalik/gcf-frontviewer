@@ -20,7 +20,7 @@ export interface ParsedFilters {
 const EMPTY_FILTERS: ParsedFilters = { clauses: [], params: {}, hasAsofDate: false }
 
 /**
- * Parse serialised filter JSON and inject a default asofDate clause if needed.
+ * Parse serialised filter JSON and inject a default asOfDate clause if needed.
  * This is the most common boilerplate across routes.
  */
 export function parseFilters(
@@ -33,7 +33,7 @@ export function parseFilters(
 
   if (!opts?.skipDefaultAsof && !hasAsofDate) {
     const prefix = opts?.tablePrefix ? `${opts.tablePrefix}.` : ""
-    clauses.push(`${prefix}${F.asofDate} = (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
+    clauses.push(`${prefix}${F.asOfDate} = (SELECT max(${F.asOfDate}) FROM gcf_risk_mv FINAL)`)
   }
 
   return { clauses, params, hasAsofDate }
@@ -103,22 +103,22 @@ export function errorJson(label: string, error: unknown): NextResponse {
 }
 
 // ---------------------------------------------------------------------------
-// 4. Shared asofDate extraction (used by historical + future routes)
+// 4. Shared asOfDate extraction (used by historical + future routes)
 // ---------------------------------------------------------------------------
 
 /**
- * Strip asofDate entries from serialised filters and return the date value separately.
- * Used when a route needs to treat asofDate differently (e.g. as upper bound).
+ * Strip asOfDate entries from serialised filters and return the date value separately.
+ * Used when a route needs to treat asOfDate differently (e.g. as upper bound).
  */
-export function extractAsofDate(filtersJson: string): { cleaned: string; asofDate: string | null } {
-  if (!filtersJson) return { cleaned: "", asofDate: null }
+export function extractAsofDate(filtersJson: string): { cleaned: string; asOfDate: string | null } {
+  if (!filtersJson) return { cleaned: "", asOfDate: null }
   try {
     const parsed = JSON.parse(filtersJson) as Array<{ field: string; operator: string; value: string[] }>
-    const asofEntry = parsed.find((f) => f.field === F.asofDate)
-    const asofDate = asofEntry?.value?.[0] ?? null
-    const rest = parsed.filter((f) => f.field !== F.asofDate)
-    return { cleaned: rest.length > 0 ? JSON.stringify(rest) : "", asofDate }
+    const asofEntry = parsed.find((f) => f.field === F.asOfDate)
+    const asOfDate = asofEntry?.value?.[0] ?? null
+    const rest = parsed.filter((f) => f.field !== F.asOfDate)
+    return { cleaned: rest.length > 0 ? JSON.stringify(rest) : "", asOfDate }
   } catch {
-    return { cleaned: filtersJson, asofDate: null }
+    return { cleaned: filtersJson, asOfDate: null }
   }
 }

@@ -21,14 +21,14 @@ export function processHistoricalData(
 
   const first = data[0]!
   const groupByField = Object.keys(first).find(
-    (k) => k !== "asofDate" && k !== fieldName,
+    (k) => k !== "asOfDate" && k !== fieldName,
   )
 
   // Group by bi-weekly period, computing average across daily snapshots
   if (!groupByField) {
     const byPeriod: Record<string, { sum: number; count: number; lastDate: string }> = {}
     for (const item of data) {
-      const d = String(item.asofDate)
+      const d = String(item.asOfDate)
       const m = toBiWeek(d)
       const v = Number(item[fieldName] || 0)
       const existing = byPeriod[m]
@@ -54,7 +54,7 @@ export function processHistoricalData(
   const totals: Record<string, number> = {}
 
   for (const item of data) {
-    const d = String(item.asofDate)
+    const d = String(item.asOfDate)
     const g = sanitizeKey(String(item[groupByField] || "Unknown"))
     const v = Number(item[fieldName] || 0)
     if (isNaN(v)) continue

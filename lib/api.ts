@@ -49,7 +49,7 @@ export async function fetchAllTableData(
     const sp = new URLSearchParams()
     sp.set("limit", String(batchSize))
     sp.set("offset", String(offset))
-    if (asOfDate) sp.set("asofDate", asOfDate)
+    if (asOfDate) sp.set("asOfDate", asOfDate)
     if (filters) sp.set("filters", filters)
 
     const data = await apiFetch<TableQueryResponse>(

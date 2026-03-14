@@ -21,9 +21,9 @@ export async function GET(request: NextRequest) {
     const latestDateExpr = buildLatestDateExpr(asofClause, hasAsofDate)
 
     const prevDateCTE = `
-      SELECT max(${F.asofDate}) AS d
+      SELECT max(${F.asOfDate}) AS d
       FROM gcf_risk_mv FINAL
-      WHERE ${F.asofDate} <= (SELECT d FROM latestDate) - toIntervalDay({daysAgo:UInt32})
+      WHERE ${F.asOfDate} <= (SELECT d FROM latestDate) - toIntervalDay({daysAgo:UInt32})
     `
 
     // ── 1. Grouped comparison by dimension ──────────────────────────
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
               / nullIf(sum(toFloat64OrZero(toString(${F.fundingAmount}))), 0) AS avgSpread,
             countDistinct(${F.tradeId}) AS tradeCount
           FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
+          WHERE ${F.asOfDate} = (SELECT d FROM latestDate)${filterWhere}
           GROUP BY ${groupBy}
         ),
         previous AS (
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
               / nullIf(sum(toFloat64OrZero(toString(${F.fundingAmount}))), 0) AS avgSpread,
             countDistinct(${F.tradeId}) AS tradeCount
           FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
+          WHERE ${F.asOfDate} = (SELECT d FROM prevDate)${filterWhere}
           GROUP BY ${groupBy}
         )
       SELECT
@@ -78,12 +78,12 @@ export async function GET(request: NextRequest) {
         currentTrades AS (
           SELECT DISTINCT ${F.tradeId}
           FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
+          WHERE ${F.asOfDate} = (SELECT d FROM latestDate)${filterWhere}
         ),
         previousTrades AS (
           SELECT DISTINCT ${F.tradeId}
           FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
+          WHERE ${F.asOfDate} = (SELECT d FROM prevDate)${filterWhere}
         )
       SELECT
         (SELECT count() FROM currentTrades WHERE ${F.tradeId} NOT IN (SELECT ${F.tradeId} FROM previousTrades)) AS newTrades,
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         countDistinct(${F.counterParty}) AS clientCount,
         countDistinct(${F.hmsBook}) AS bookCount
       FROM gcf_risk_mv FINAL
-      WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
+      WHERE ${F.asOfDate} = (SELECT d FROM latestDate)${filterWhere}
       UNION ALL
       SELECT
         'previous' AS period,
@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
         countDistinct(${F.counterParty}) AS clientCount,
         countDistinct(${F.hmsBook}) AS bookCount
       FROM gcf_risk_mv FINAL
-      WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
+      WHERE ${F.asOfDate} = (SELECT d FROM prevDate)${filterWhere}
     `
 
     // ── 4. New trades between periods ─────────────────────────────
@@ -133,12 +133,12 @@ export async function GET(request: NextRequest) {
         previousIds AS (
           SELECT DISTINCT ${F.tradeId}
           FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} = (SELECT d FROM prevDate)${filterWhere}
+          WHERE ${F.asOfDate} = (SELECT d FROM prevDate)${filterWhere}
         ),
         filtered AS (
           SELECT *
           FROM gcf_risk_mv FINAL
-          WHERE ${F.asofDate} = (SELECT d FROM latestDate)${filterWhere}
+          WHERE ${F.asOfDate} = (SELECT d FROM latestDate)${filterWhere}
             AND ${F.tradeId} NOT IN (SELECT ${F.tradeId} FROM previousIds)
         )
       SELECT ${NEW_TRADE_SELECT_EXPR}

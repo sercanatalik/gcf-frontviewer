@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
 
     // Date window: for maturity mode, only future maturities within N days
     if (sortMode === "maturity") {
-      clauses.push(`gcf_risk_mv.${F.maturityDt} >= gcf_risk_mv.${F.asofDate}`)
-      clauses.push(`gcf_risk_mv.${F.maturityDt} <= gcf_risk_mv.${F.asofDate} + toIntervalDay(${relativeDt})`)
+      clauses.push(`gcf_risk_mv.${F.maturityDt} >= gcf_risk_mv.${F.asOfDate}`)
+      clauses.push(`gcf_risk_mv.${F.maturityDt} <= gcf_risk_mv.${F.asOfDate} + toIntervalDay(${relativeDt})`)
     }
 
     const query = `

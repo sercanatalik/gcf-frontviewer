@@ -1,6 +1,6 @@
 export interface Trade {
   tradeId: string
-  asofDate: string
+  asOfDate: string
   tradeStatus: string
   side: string
 

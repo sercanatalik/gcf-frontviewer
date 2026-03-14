@@ -14,7 +14,7 @@
 export const F = {
   // identifiers & status
   tradeId: "tradeId",
-  asofDate: "asofDate",
+  asOfDate: "asOfDate",
   snapId: "snapId",
   id: "id",
   tradeStatus: "status",
@@ -193,7 +193,7 @@ export function resolveField(keyOrCol: string): string | undefined {
 // ---------------------------------------------------------------------------
 
 export const DATE_COLUMNS = new Set<string>([
-  F.asofDate,
+  F.asOfDate,
   F.tradeDt,
   F.startDt,
   F.maturityDt,
@@ -205,7 +205,7 @@ export const DATE_COLUMNS = new Set<string>([
 // ---------------------------------------------------------------------------
 
 export const TRADE_COLUMNS = [
-  F.tradeId, F.asofDate, F.tradeStatus, F.side,
+  F.tradeId, F.asOfDate, F.tradeStatus, F.side,
   F.productType, F.productSubType, F.hms_assetClass,
   F.tradeDt, F.startDt, F.maturityDt, F.maturityIsOpen,
   F.fundingAmount, F.fundingAmountLCY, F.collateralAmount, F.collateralAmountLCY, F.cashOut,
@@ -259,7 +259,7 @@ export const NEW_TRADE_SELECT_EXPR = buildSelectExpr(NEW_TRADE_COLUMNS)
 // ---------------------------------------------------------------------------
 
 export const ALLOWED_FILTER_COLUMNS = new Set<string>([
-  F.asofDate,
+  F.asOfDate,
   F.counterParty,
   F.productType,
   F.hmsBook,

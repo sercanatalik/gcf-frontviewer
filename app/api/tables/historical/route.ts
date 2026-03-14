@@ -19,17 +19,17 @@ export async function GET(request: NextRequest) {
 
   try {
     const client = getClickHouseClient()
-    const { cleaned, asofDate } = extractAsofDate(filtersJson)
+    const { cleaned, asOfDate } = extractAsofDate(filtersJson)
 
     const { clauses, params } = cleaned
       ? buildWhereClausesFromFilters(cleaned)
       : { clauses: [] as string[], params: {} as Record<string, unknown> }
 
-    if (asofDate) {
-      clauses.push(`${F.asofDate} <= {_asof:String}`)
-      params["_asof"] = asofDate
+    if (asOfDate) {
+      clauses.push(`${F.asOfDate} <= {_asof:String}`)
+      params["_asof"] = asOfDate
     } else {
-      clauses.push(`${F.asofDate} <= (SELECT max(${F.asofDate}) FROM gcf_risk_mv FINAL)`)
+      clauses.push(`${F.asOfDate} <= (SELECT max(${F.asOfDate}) FROM gcf_risk_mv FINAL)`)
     }
 
     const groupByExpr = groupBy ? `, ${groupBy}` : ""
@@ -40,12 +40,12 @@ export async function GET(request: NextRequest) {
 
     const query = `
       SELECT
-        ${F.asofDate}${groupByExpr},
+        ${F.asOfDate}${groupByExpr},
         ${selectExpr}
       FROM gcf_risk_mv FINAL
       ${whereString(clauses)}
-      GROUP BY ${F.asofDate}${groupByExpr}
-      ORDER BY ${F.asofDate}${groupByExpr}
+      GROUP BY ${F.asOfDate}${groupByExpr}
+      ORDER BY ${F.asOfDate}${groupByExpr}
     `
 
     const result = await client.query({ query, query_params: params, format: "JSONEachRow" })

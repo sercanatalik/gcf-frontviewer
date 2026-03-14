@@ -46,7 +46,7 @@ export const layoutPresets: LayoutPreset[] = [
           table: TABLE,
           title: "Trade Overview",
           columns: [
-            "asofDate",
+            "asOfDate",
             "tradeId",
             "counterParty",
             "productType",
@@ -62,7 +62,7 @@ export const layoutPresets: LayoutPreset[] = [
             "hmsDesk",
             "hmsBook",
           ],
-          sort: [["asofDate", "desc"]],
+          sort: [["asOfDate", "desc"]],
           group_by: [],
           split_by: [],
           filter: [],
