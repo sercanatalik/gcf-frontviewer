@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
       ? buildWhereClausesFromFilters(cleaned)
       : { clauses: [] as string[], params: {} as Record<string, unknown> }
 
+    // Scope to a single snapshot date
     if (asOfDate) {
       clauses.push(`gcf_risk_mv.${F.asOfDate} = {_asof:String}`)
       params["_asof"] = asOfDate
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
       clauses.push(`gcf_risk_mv.${F.asOfDate} = (SELECT max(${F.asOfDate}) FROM gcf_risk_mv FINAL)`)
     }
 
+    // Only future maturities
     const maturityCutoff = asOfDate
       ? `${F.maturityDt} >= {_asof:String}`
       : `${F.maturityDt} >= today()`
@@ -39,50 +41,45 @@ export async function GET(request: NextRequest) {
     const filterWhere = clauses.length > 0 ? `WHERE ${clauses.join(" AND ")}` : ""
     const groupByExpr = groupBy ? `, ${groupBy}` : ""
     const partitionExpr = groupBy ? `PARTITION BY ${groupBy} ` : ""
-    const joinExpr = groupBy ? `JOIN total_per_group t ON m.${groupBy} = t.${groupBy}` : "CROSS JOIN total_amounts t"
-    const totalGroupBy = groupBy
-      ? `total_per_group AS (
-          SELECT ${groupBy}, SUM(monthly_amount) AS total
-          FROM monthly_data
-          GROUP BY ${groupBy}
-        )`
-      : `total_amounts AS (
-          SELECT SUM(monthly_amount) AS total
-          FROM monthly_data
-        )`
 
     const weighted = WEIGHTED_FIELDS[fieldName]
-    const monthlyAggExpr = weighted
-      ? `sum(toFloat64OrZero(toString(${weighted.numerator})) * toFloat64OrZero(toString(${weighted.weight}))) / nullIf(sum(toFloat64OrZero(toString(${weighted.weight}))), 0) AS monthly_amount`
-      : `sum(toFloat64OrZero(toString(${fieldName}))) AS monthly_amount`
+    const aggExpr = weighted
+      ? `sum(toFloat64OrZero(toString(${weighted.numerator})) * toFloat64OrZero(toString(${weighted.weight}))) / nullIf(sum(toFloat64OrZero(toString(${weighted.weight}))), 0)`
+      : `sum(toFloat64OrZero(toString(${fieldName})))`
 
+    // For each maturity week: compute total live exposure = total - cumulative matured
+    // This gives a declining profile showing remaining exposure over time
     const query = `
-      WITH monthly_data AS (
-        SELECT
-          toStartOfWeek(${F.maturityDt}) AS month
-          ${groupByExpr},
-          ${monthlyAggExpr}
-        FROM gcf_risk_mv FINAL
-        ${filterWhere}
-          AND ${maturityCutoff}
-        GROUP BY month${groupByExpr}
-      ),
-      ${totalGroupBy},
-      cumulative_data AS (
-        SELECT
-          m.month
-          ${groupByExpr ? `, m.${groupBy}` : ""},
-          m.monthly_amount,
-          t.total - SUM(m.monthly_amount) OVER (${partitionExpr}ORDER BY m.month ROWS UNBOUNDED PRECEDING) AS remaining
-        FROM monthly_data m
-        ${joinExpr}
-      )
+      WITH
+        weekly AS (
+          SELECT
+            toStartOfWeek(${F.maturityDt}) AS week
+            ${groupByExpr},
+            ${aggExpr} AS maturing
+          FROM gcf_risk_mv FINAL
+          ${filterWhere}
+            AND ${maturityCutoff}
+          GROUP BY week${groupByExpr}
+        ),
+        total AS (
+          SELECT
+            ${groupBy ? `${groupBy},` : ""}
+            ${aggExpr} AS grand_total
+          FROM gcf_risk_mv FINAL
+          ${filterWhere}
+            AND ${maturityCutoff}
+          ${groupBy ? `GROUP BY ${groupBy}` : ""}
+        )
       SELECT
-        month AS ${F.maturityDt}
-        ${groupByExpr},
-        remaining AS ${fieldName}
-      FROM cumulative_data
-      ORDER BY month${groupByExpr}
+        w.week AS ${F.maturityDt}
+        ${groupByExpr ? `, w.${groupBy}` : ""},
+        greatest(
+          t.grand_total - SUM(w.maturing) OVER (${partitionExpr}ORDER BY w.week ROWS UNBOUNDED PRECEDING),
+          0
+        ) AS ${fieldName}
+      FROM weekly w
+      ${groupBy ? `JOIN total t ON w.${groupBy} = t.${groupBy}` : "CROSS JOIN total t"}
+      ORDER BY w.week${groupByExpr}
     `
 
     const result = await client.query({ query, query_params: params, format: "JSONEachRow" })
