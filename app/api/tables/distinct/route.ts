@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getClickHouseClient, isTableAllowed } from "@/lib/clickhouse"
 import { DATE_COLUMNS } from "@/lib/columns"
-import { ALLOWED_FILTER_COLUMNS } from "@/lib/field-defs"
+import { KNOWN_COLUMNS } from "@/lib/field-defs"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  if (!ALLOWED_FILTER_COLUMNS.has(column)) {
+  if (!KNOWN_COLUMNS.has(column)) {
     return NextResponse.json(
       { error: `Column "${column}" is not a valid filter column` },
       { status: 400 },
