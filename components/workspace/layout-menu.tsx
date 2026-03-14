@@ -20,6 +20,13 @@ import {
   RotateCcw,
   Trash2,
   Check,
+  Percent,
+  Building,
+  Calculator,
+  Clock,
+  Landmark,
+  UserCheck,
+  DollarSign,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -48,6 +55,13 @@ const iconMap: Record<string, React.ReactNode> = {
   "bar-chart": <BarChart3 className="size-4 text-violet-500" />,
   globe: <Globe className="size-4 text-cyan-500" />,
   layers: <Layers className="size-4 text-amber-500" />,
+  percent: <Percent className="size-4 text-pink-500" />,
+  building: <Building className="size-4 text-slate-500" />,
+  calculator: <Calculator className="size-4 text-lime-500" />,
+  clock: <Clock className="size-4 text-rose-500" />,
+  landmark: <Landmark className="size-4 text-teal-500" />,
+  "user-check": <UserCheck className="size-4 text-sky-500" />,
+  currency: <DollarSign className="size-4 text-green-500" />,
 }
 
 function getCustomLayouts(): LayoutPreset[] {
@@ -193,6 +207,12 @@ export function LayoutMenu({ workspaceRef, ready }: LayoutMenuProps) {
             <Link href="/activity">
               <BarChart3 className="size-4 text-cyan-500" />
               Activity
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/workspace">
+              <Table className="size-4 text-blue-500" />
+              Workspace
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>

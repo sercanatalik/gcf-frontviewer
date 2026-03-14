@@ -9,6 +9,8 @@ import { useFiltersParam } from "@/hooks/use-filters-param"
 import { basePath } from "@/lib/utils"
 
 const STORAGE_KEY = "perspective-workspace-state"
+const LAYOUT_VERSION_KEY = "perspective-layout-version"
+const LAYOUT_VERSION = 2 // bump to invalidate stale layouts
 
 const INITIAL_PROGRESS: LoadingProgress = {
   phase: "init-wasm",
@@ -133,11 +135,20 @@ export function usePerspective(
 
     let cancelled = false
 
-    const suppressViewNotFound = (event: PromiseRejectionEvent) => {
-      const msg = event.reason?.message ?? ""
-      if (msg === "View not found") event.preventDefault()
+    const suppressPerspectiveErrors = (event: PromiseRejectionEvent) => {
+      const msg = event.reason?.message ?? String(event.reason ?? "")
+      if (msg.includes("View not found") || msg.includes("innerHTML")) {
+        event.preventDefault()
+      }
     }
-    window.addEventListener("unhandledrejection", suppressViewNotFound)
+    const suppressDomErrors = (event: ErrorEvent) => {
+      const msg = event.message ?? ""
+      if (msg.includes("innerHTML") || msg.includes("View not found")) {
+        event.preventDefault()
+      }
+    }
+    window.addEventListener("unhandledrejection", suppressPerspectiveErrors)
+    window.addEventListener("error", suppressDomErrors)
 
     async function setup() {
       try {
@@ -443,7 +454,16 @@ export function usePerspective(
           })
         }
 
-        const saved = localStorage.getItem(STORAGE_KEY)
+        const storedVersion = Number(localStorage.getItem(LAYOUT_VERSION_KEY) ?? 0)
+        const saved = storedVersion === LAYOUT_VERSION
+          ? localStorage.getItem(STORAGE_KEY)
+          : null
+
+        if (storedVersion !== LAYOUT_VERSION) {
+          localStorage.removeItem(STORAGE_KEY)
+          localStorage.setItem(LAYOUT_VERSION_KEY, String(LAYOUT_VERSION))
+        }
+
         if (saved) {
           try {
             await workspace.restore(JSON.parse(saved))
@@ -469,11 +489,11 @@ export function usePerspective(
           setLoading((p) => ({ ...p, phase: "done" }))
         }
       } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error"
+        // "View not found" is a transient Perspective error — not fatal
+        if (msg === "View not found") return
         if (!cancelled) {
-          setLoading((p) => ({
-            ...p,
-            error: err instanceof Error ? err.message : "Unknown error",
-          }))
+          setLoading((p) => ({ ...p, error: msg }))
         }
       }
     }
@@ -484,7 +504,8 @@ export function usePerspective(
       // Defer removal so async Perspective errors that fire after
       // unmount (e.g. navigating away) are still suppressed.
       setTimeout(() => {
-        window.removeEventListener("unhandledrejection", suppressViewNotFound)
+        window.removeEventListener("unhandledrejection", suppressPerspectiveErrors)
+        window.removeEventListener("error", suppressDomErrors)
       }, 2000)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
