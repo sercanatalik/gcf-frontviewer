@@ -445,7 +445,6 @@ export const DEEP_DIVE_BREAKDOWN_DIMENSIONS = [
   { groupBy: F.hmsDesk, label: "By Desk" },
   { groupBy: F.hmsSL1, label: "By SL1" },
   { groupBy: F.hmsSL2, label: "By SL2" },
-  
   { groupBy: F.hmsBook, label: "By Book" },
   // Product
   { groupBy: F.productType, label: "By Product" },

@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn, basePath } from "@/lib/utils"
 import { formatCurrencyCompact as formatCurrency } from "@/lib/format"
+import { useDeepDiveNavigation } from "@/hooks/use-deep-dive-navigation"
 import type { KpiMeasure, KpiStatData } from "@/components/dashboard/kpi-cards/types"
 import { formatKpiValue, formatDelta } from "@/components/dashboard/kpi-cards/utils"
 import { HistoricalChart } from "@/components/dashboard/cash-out-chart/historical-chart"
@@ -181,7 +182,7 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
       {/* Header */}
       <div className="flex items-start gap-4">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push("/dashboard")}
           className="mt-0.5 flex size-11 shrink-0 items-center justify-center rounded-xl border bg-card transition-colors hover:bg-muted"
         >
           <ArrowLeft className="size-7" />
@@ -290,7 +291,7 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
                 ) : rows.length === 0 ? (
                   <p className="py-8 text-center text-sm text-muted-foreground">No data</p>
                 ) : (
-                  <BreakdownList rows={rows} />
+                  <BreakdownList rows={rows} groupBy={dim.groupBy} />
                 )}
               </CardContent>
             </Card>
@@ -365,7 +366,8 @@ function TrendBadge({ change }: { change: number }) {
   )
 }
 
-function BreakdownList({ rows }: { rows: SubBreakdown[] }) {
+function BreakdownList({ rows, groupBy }: { rows: SubBreakdown[]; groupBy: string }) {
+  const navigate = useDeepDiveNavigation(groupBy)
   const maxCashOut = Math.max(...rows.map((r) => Math.abs(r.cash_out)), 1)
 
   return (
@@ -375,7 +377,8 @@ function BreakdownList({ rows }: { rows: SubBreakdown[] }) {
         return (
           <div
             key={row.group}
-            className="group relative flex items-center justify-between rounded-md px-3 py-2 transition-colors hover:bg-muted/50"
+            className="group relative flex cursor-pointer items-center justify-between rounded-md px-3 py-2 transition-colors hover:bg-muted/50"
+            onClick={() => navigate(row.group)}
           >
             {/* Background bar */}
             <div
