@@ -174,15 +174,15 @@ export function DeepDiveContent({ field, value, label }: DeepDiveContentProps) {
             Deep dive analysis — filtered to <span className="font-medium text-foreground">{value}</span> compared to {RELATIVE_DAYS} days prior
           </p>
         </div>
+        <div className="shrink-0">
+          <RiskFilter
+            filterTypes={filterTypes}
+            filterOperators={filterOperators}
+            iconMapping={iconMapping}
+            operatorConfig={operatorConfig}
+          />
+        </div>
       </div>
-
-      {/* Filters */}
-      <RiskFilter
-        filterTypes={filterTypes}
-        filterOperators={filterOperators}
-        iconMapping={iconMapping}
-        operatorConfig={operatorConfig}
-      />
 
       {/* Executive Summary KPIs */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">

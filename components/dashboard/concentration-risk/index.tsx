@@ -35,6 +35,7 @@ import {
   COUNTERPARTY_DIMENSION_OPTIONS,
   type CounterpartyDimension,
 } from "./use-concentration-data"
+import { useDeepDiveNavigation } from "@/hooks/use-deep-dive-navigation"
 
 function formatCurrency(value: number): string {
   if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
@@ -74,6 +75,7 @@ const chartConfig: ChartConfig = {
 export function ConcentrationRisk() {
   const [dimension, setDimension] = useState<CounterpartyDimension>("counterpartyParentName")
   const { data, isLoading, error } = useConcentrationData(dimension)
+  const navigateToDeepDive = useDeepDiveNavigation(dimension)
 
   const level = data ? hhiLevel(data.hhi) : null
   const dimensionLabel = COUNTERPARTY_DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label ?? "Name"
@@ -212,7 +214,14 @@ export function ConcentrationRisk() {
                     />
                   }
                 />
-                <Bar dataKey="exposure" radius={[0, 4, 4, 0]}>
+                <Bar
+                  dataKey="exposure"
+                  radius={[0, 4, 4, 0]}
+                  className="cursor-pointer"
+                  onClick={(entry) => {
+                    if (entry?.name) navigateToDeepDive(entry.name)
+                  }}
+                >
                   {data.items.map((_, i) => (
                     <Cell
                       key={i}

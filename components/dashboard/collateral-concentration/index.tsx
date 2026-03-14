@@ -34,6 +34,7 @@ import {
   DIMENSION_OPTIONS,
   type CollateralDimension,
 } from "./use-collateral-concentration"
+import { useDeepDiveNavigation } from "@/hooks/use-deep-dive-navigation"
 
 function formatCurrency(value: number): string {
   if (Math.abs(value) >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(1)}B`
@@ -72,6 +73,7 @@ const chartConfig: ChartConfig = {
 export function CollateralConcentration() {
   const [dimension, setDimension] = useState<CollateralDimension>("collateralDesc")
   const { data, isLoading, error } = useCollateralConcentration(dimension)
+  const navigateToDeepDive = useDeepDiveNavigation(dimension)
 
   const level = data ? hhiLevel(data.hhi) : null
   const dimensionLabel = DIMENSION_OPTIONS.find((d) => d.value === dimension)?.label ?? "Security"
@@ -208,7 +210,14 @@ export function CollateralConcentration() {
                     />
                   }
                 />
-                <Bar dataKey="exposure" radius={[0, 4, 4, 0]}>
+                <Bar
+                  dataKey="exposure"
+                  radius={[0, 4, 4, 0]}
+                  className="cursor-pointer"
+                  onClick={(entry) => {
+                    if (entry?.name) navigateToDeepDive(entry.name)
+                  }}
+                >
                   {data.items.map((_, i) => (
                     <Cell
                       key={i}
